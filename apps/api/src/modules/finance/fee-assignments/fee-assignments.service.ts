@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../../../database/database.service';
 import { AuditService } from '../../../audit/audit.service';
+import { AccountingIntegrationService } from '../../accounting/accounting-integration.service';
 import { Prisma } from '@prisma/client';
 
 @Injectable()
@@ -8,6 +9,7 @@ export class FeeAssignmentsService {
   constructor(
     private readonly db: DatabaseService,
     private readonly audit: AuditService,
+    private readonly accounting: AccountingIntegrationService,
   ) {}
 
   async assignToStudent(organizationId: string, data: any, actorId: string) {
@@ -101,7 +103,7 @@ export class FeeAssignmentsService {
       },
     });
 
-    // Create Ledger Entry
+    // Create Ledger Entry (Operational)
     await tx.financialLedgerEntry.create({
       data: {
         type: 'FEE_CHARGED',
@@ -112,6 +114,9 @@ export class FeeAssignmentsService {
         description: `Fee demand raised: ${invoiceNumber}`,
       },
     });
+
+    // Integrate with Accounting
+    this.accounting.handleFeeIssued(organizationId, demand.id, actorId);
 
     return demand;
   }

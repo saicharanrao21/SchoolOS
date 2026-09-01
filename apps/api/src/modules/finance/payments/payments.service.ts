@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { DatabaseService } from '../../../database/database.service';
 import { AuditService } from '../../../audit/audit.service';
+import { AccountingIntegrationService } from '../../accounting/accounting-integration.service';
 import { Prisma, PaymentMethod, PaymentStatus, InvoiceStatus } from '@prisma/client';
 
 @Injectable()
@@ -8,6 +9,7 @@ export class PaymentsService {
   constructor(
     private readonly db: DatabaseService,
     private readonly audit: AuditService,
+    private readonly accounting: AccountingIntegrationService,
   ) {}
 
   async collect(organizationId: string, data: any, actorId: string) {
@@ -99,6 +101,9 @@ export class PaymentsService {
         schoolId: student.schoolId,
         metadata: { amount: amount.toNumber(), method: data.method },
       });
+
+      // Integrate with Accounting
+      this.accounting.handlePaymentReceived(organizationId, payment.id, actorId);
 
       return payment;
     });

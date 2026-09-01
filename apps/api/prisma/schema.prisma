@@ -160,6 +160,34 @@ enum LedgerEntryType {
   WAIVER
 }
 
+enum FiscalYearStatus {
+  DRAFT
+  OPEN
+  CLOSED
+  LOCKED
+}
+
+enum AccountingPeriodStatus {
+  OPEN
+  CLOSED
+  LOCKED
+}
+
+enum AccountType {
+  ASSET
+  LIABILITY
+  EQUITY
+  REVENUE
+  EXPENSE
+}
+
+enum JournalEntryStatus {
+  DRAFT
+  POSTED
+  REVERSED
+  VOID
+}
+
 model Organization {
   id          String   @id @default(uuid())
   name        String
@@ -219,6 +247,10 @@ model School {
   applications   AdmissionApplication[]
   feeCategories  FeeCategory[]
   feeStructures  FeeStructure[]
+  fiscalYears    FiscalYear[]
+  accounts       ChartOfAccount[]
+  journals       Journal[]
+  costCenters    CostCenter[]
   auditLogs      AuditEvent[]
 }
 
@@ -849,6 +881,8 @@ model Payment {
   receipt           Receipt?
   refunds           Refund[]
   ledgerEntries     FinancialLedgerEntry[]
+  journalEntryId    String?       @unique
+  journalEntry      JournalEntry? @relation(fields: [journalEntryId], references: [id])
 }
 
 model Receipt {
@@ -908,6 +942,153 @@ model FinancialLedgerEntry {
   organizationId    String
   schoolId          String
   createdAt         DateTime        @default(now())
+}
+
+// Phase 6: Accounting Models
+
+model FiscalYear {
+  id             String           @id @default(uuid())
+  name           String           // e.g. "FY 2026-27"
+  startDate      DateTime
+  endDate        DateTime
+  status         FiscalYearStatus @default(DRAFT)
+  isCurrent      Boolean          @default(false)
+  schoolId       String
+  school         School           @relation(fields: [schoolId], references: [id])
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  periods        AccountingPeriod[]
+  journalEntries JournalEntry[]
+
+  @@unique([schoolId, name])
+}
+
+model AccountingPeriod {
+  id           String                 @id @default(uuid())
+  fiscalYearId String
+  fiscalYear   FiscalYear             @relation(fields: [fiscalYearId], references: [id])
+  periodNumber Int                    // 1-12
+  name         String                 // e.g. "April 2026"
+  startDate    DateTime
+  endDate      DateTime
+  status       AccountingPeriodStatus @default(OPEN)
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+
+  journalEntries JournalEntry[]
+
+  @@unique([fiscalYearId, periodNumber])
+}
+
+model ChartOfAccount {
+  id             String      @id @default(uuid())
+  code           String      // e.g. "1100"
+  name           String      // e.g. "Cash in Hand"
+  type           AccountType
+  parentAccountId String?
+  parentAccount  ChartOfAccount? @relation("AccountHierarchy", fields: [parentAccountId], references: [id])
+  subAccounts    ChartOfAccount[] @relation("AccountHierarchy")
+  schoolId       String
+  school         School      @relation(fields: [schoolId], references: [id])
+  isSystem       Boolean     @default(false)
+  isActive       Boolean     @default(true)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  journalLines   JournalLine[]
+
+  @@unique([schoolId, code])
+}
+
+model Journal {
+  id             String   @id @default(uuid())
+  name           String   // e.g. "Cash Journal", "Bank Journal"
+  code           String   // e.g. "CJ", "BJ"
+  schoolId       String
+  school         School   @relation(fields: [schoolId], references: [id])
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  journalEntries JournalEntry[]
+
+  @@unique([schoolId, code])
+}
+
+model JournalEntry {
+  id                String             @id @default(uuid())
+  entryNumber       String             @unique
+  date              DateTime           @default(now())
+  description       String?
+  journalId         String
+  journal           Journal            @relation(fields: [journalId], references: [id])
+  fiscalYearId      String
+  fiscalYear        FiscalYear         @relation(fields: [fiscalYearId], references: [id])
+  periodId          String
+  period            AccountingPeriod   @relation(fields: [periodId], references: [id])
+  status            JournalEntryStatus @default(POSTED)
+  sourceType        String?            // e.g. "PAYMENT", "FEE_DEMAND"
+  sourceId          String?            // Reference to Payment.id etc.
+  totalAmount       Decimal            @db.Decimal(12, 2)
+  createdById       String
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  lines             JournalLine[]
+  payment           Payment?
+}
+
+model JournalLine {
+  id             String         @id @default(uuid())
+  journalEntryId String
+  journalEntry   JournalEntry   @relation(fields: [journalEntryId], references: [id])
+  accountId      String
+  account        ChartOfAccount @relation(fields: [accountId], references: [id])
+  debit          Decimal        @default(0) @db.Decimal(12, 2)
+  credit         Decimal        @default(0) @db.Decimal(12, 2)
+  description    String?
+  costCenterId   String?
+  costCenter     CostCenter?    @relation(fields: [costCenterId], references: [id])
+  createdAt      DateTime       @default(now())
+}
+
+model BankAccount {
+  id               String   @id @default(uuid())
+  name             String
+  bankName         String
+  accountNumber    String?
+  currency         String   @default("INR")
+  openingBalance   Decimal  @default(0) @db.Decimal(12, 2)
+  schoolId         String
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model CostCenter {
+  id        String   @id @default(uuid())
+  name      String
+  code      String
+  schoolId  String
+  school    School   @relation(fields: [schoolId], references: [id])
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  journalLines JournalLine[]
+
+  @@unique([schoolId, code])
+}
+
+model Budget {
+  id             String     @id @default(uuid())
+  fiscalYearId   String
+  accountId      String
+  amount         Decimal    @db.Decimal(12, 2)
+  periodNumber   Int?       // Optional for period-specific budget
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
 }
 
 model User {

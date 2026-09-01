@@ -21,7 +21,10 @@ import {
   FileText,
   Mail,
   Wallet,
-  Plus
+  Plus,
+  Landmark,
+  FolderTree,
+  BarChart3
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -49,6 +52,16 @@ const navItems = [
       { label: 'Fee Structures', href: '/management/finance/fee-structures', icon: Layers },
       { label: 'Invoices', href: '/management/finance/invoices', icon: FileText },
       { label: 'Collect Fee', href: '/management/finance/collect', icon: Plus },
+    ]
+  },
+  {
+    label: 'Accounting',
+    icon: Landmark,
+    children: [
+      { label: 'Dashboard', href: '/management/accounting/dashboard', icon: LayoutDashboard },
+      { label: 'Chart of Accounts', href: '/management/accounting/chart-of-accounts', icon: FolderTree },
+      { label: 'Journal Entries', href: '/management/accounting/journal-entries', icon: FileText },
+      { label: 'Financial Reports', href: '/management/accounting/reports', icon: BarChart3 },
     ]
   },
   { label: 'Students', icon: Users, href: '/management/students' },
