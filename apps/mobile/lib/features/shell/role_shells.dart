@@ -73,16 +73,63 @@ class ParentShell extends StatelessWidget {
       title: 'Parent Portal',
       destinations: const [
         NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
-        NavigationDestination(icon: Icon(Icons.child_care_outlined), selectedIcon: Icon(Icons.child_care), label: 'Children'),
+        NavigationDestination(icon: Icon(Icons.school_outlined), selectedIcon: Icon(Icons.school), label: 'Academics'),
         NavigationDestination(icon: Icon(Icons.payments_outlined), selectedIcon: Icon(Icons.payments), label: 'Payments'),
         NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profile'),
       ],
       pages: [
         const ParentHome(),
-        const ChildrenList(),
+        const ChildAcademics(),
         const ParentPayments(),
         const Center(child: Text('Profile Settings')),
       ],
+    );
+  }
+}
+
+class ChildAcademics extends StatelessWidget {
+  const ChildAcademics({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        const Text('Academic Progress', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.navyColor)),
+        const SizedBox(height: 20),
+        const AcademicInfoCard(title: 'Active Homework', count: '4', icon: Icons.assignment, color: Colors.blue),
+        const AcademicInfoCard(title: 'Upcoming Tests', count: '2', icon: Icons.event, color: Colors.orange),
+        const AcademicInfoCard(title: 'Attendance Rate', count: '94%', icon: Icons.check_circle, color: Colors.green),
+        const SizedBox(height: 32),
+        const Text('Today\'s Timetable', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.navyColor)),
+        const SizedBox(height: 16),
+        const ScheduleItem(time: '09:00 AM', subject: 'Mathematics', room: 'Room 302'),
+        const ScheduleItem(time: '10:15 AM', subject: 'Physics', room: 'Lab 1'),
+      ],
+    );
+  }
+}
+
+class AcademicInfoCard extends StatelessWidget {
+  final String title;
+  final String count;
+  final IconData icon;
+  final Color color;
+
+  const AcademicInfoCard({super.key, required this.title, required this.count, required this.icon, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ListTile(
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+          child: Icon(icon, color: color, size: 20),
+        ),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+        trailing: Text(count, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.navyColor)),
+      ),
     );
   }
 }
@@ -292,16 +339,78 @@ class TeacherShell extends StatelessWidget {
       title: 'Teacher Portal',
       destinations: [
         NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'Home'),
-        NavigationDestination(icon: Icon(Icons.how_to_reg_outlined), selectedIcon: Icon(Icons.how_to_reg), label: 'Attendance'),
+        NavigationDestination(icon: Icon(Icons.calendar_today_outlined), selectedIcon: Icon(Icons.calendar_today), label: 'Timetable'),
         NavigationDestination(icon: Icon(Icons.assignment_outlined), selectedIcon: Icon(Icons.assignment), label: 'Homework'),
-        NavigationDestination(icon: Icon(Icons.menu), label: 'More'),
+        NavigationDestination(icon: Icon(Icons.how_to_reg_outlined), selectedIcon: Icon(Icons.how_to_reg), label: 'Attendance'),
       ],
       pages: [
         const TeacherDashboard(),
+        const TeacherTimetable(),
+        const TeacherHomework(),
         const AttendanceMarking(),
-        Center(child: Text('Homework Assignments')),
-        Center(child: Text('More Options')),
       ],
+    );
+  }
+}
+
+class TeacherTimetable extends StatelessWidget {
+  const TeacherTimetable({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        const Text('My Schedule', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.navyColor)),
+        const SizedBox(height: 20),
+        const ScheduleItem(time: '08:30 AM', subject: 'Grade 10-A • Mathematics', room: 'Room 302'),
+        const ScheduleItem(time: '09:15 AM', subject: 'Grade 10-B • Mathematics', room: 'Room 305'),
+        const ScheduleItem(time: '10:00 AM', subject: 'Break', room: 'Staff Room'),
+        const ScheduleItem(time: '10:15 AM', subject: 'Grade 9-A • Mathematics', room: 'Room 201'),
+      ],
+    );
+  }
+}
+
+class TeacherHomework extends StatelessWidget {
+  const TeacherHomework({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        const Text('Assignments', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.navyColor)),
+        const SizedBox(height: 20),
+        const AssignmentTile(title: 'Calculus Worksheet', classInfo: 'Grade 10-A', submissions: '32/38', dueDate: 'Tomorrow'),
+        const AssignmentTile(title: 'Geometry Project', classInfo: 'Grade 10-B', submissions: '15/40', dueDate: 'Sept 05'),
+      ],
+    );
+  }
+}
+
+class AssignmentTile extends StatelessWidget {
+  final String title;
+  final String classInfo;
+  final String submissions;
+  final String dueDate;
+
+  const AssignmentTile({super.key, required this.title, required this.classInfo, required this.submissions, required this.dueDate});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ListTile(
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+        subtitle: Text('$classInfo • Due $dueDate', style: const TextStyle(fontSize: 12)),
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(submissions, style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+            const Text('Submissions', style: TextStyle(fontSize: 10, color: Colors.black26)),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -328,7 +437,7 @@ class TeacherDashboard extends StatelessWidget {
             const SizedBox(width: 16),
             Expanded(
               child: _QuickStat(
-                label: 'Period 3',
+                label: 'Next Period',
                 value: 'Mathematics',
                 icon: Icons.schedule,
                 color: AppTheme.primaryColor,
@@ -337,7 +446,7 @@ class TeacherDashboard extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 32),
-        const Text('Class Schedule', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.navyColor)),
+        const Text('Quick Access', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.navyColor)),
         const SizedBox(height: 16),
         const ScheduleItem(time: '09:00 AM', subject: 'Grade 10-A • Mathematics', room: 'Room 302'),
         const ScheduleItem(time: '10:15 AM', subject: 'Grade 9-B • Physics', room: 'Lab 1'),
@@ -477,6 +586,63 @@ class _StatusBtn extends StatelessWidget {
   }
 }
 
+class StudentShell extends StatelessWidget {
+  const StudentShell({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return const RoleShell(
+      title: 'My Student Portal',
+      destinations: [
+        NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'Home'),
+        NavigationDestination(icon: Icon(Icons.calendar_today_outlined), selectedIcon: Icon(Icons.calendar_today), label: 'Timetable'),
+        NavigationDestination(icon: Icon(Icons.assignment_outlined), selectedIcon: Icon(Icons.assignment), label: 'Homework'),
+        NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profile'),
+      ],
+      pages: [
+        const StudentHome(),
+        const TeacherTimetable(), // Reusing for now
+        const TeacherHomework(), // Reusing for now
+        const Center(child: Text('My Profile')),
+      ],
+    );
+  }
+}
+
+class StudentHome extends StatelessWidget {
+  const StudentHome({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        const Text('Hi, Alice Johnson', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.navyColor)),
+        const Text('Grade 10-A', style: TextStyle(color: Colors.black54)),
+        const SizedBox(height: 24),
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppTheme.primaryColor,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Current Period', style: TextStyle(color: Colors.white70, fontSize: 12)),
+              SizedBox(height: 4),
+              Text('Mathematics', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+              Text('09:00 AM - 09:45 AM • Room 302', style: TextStyle(color: Colors.white70, fontSize: 13)),
+            ],
+          ),
+        ),
+        const SizedBox(height: 32),
+        const Text('My Tasks', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.navyColor)),
+        const SizedBox(height: 16),
+        const AssignmentTile(title: 'Calculus Worksheet', classInfo: 'Due Tomorrow', submissions: 'Pending', dueDate: ''),
+      ],
+    );
+  }
+}
+
 class ManagementShell extends StatelessWidget {
   const ManagementShell({super.key});
   @override
@@ -534,7 +700,7 @@ class StatCard extends StatelessWidget {
   final IconData icon;
   final Color color;
 
-  const StatCard({super.key, required this.label, required this.value, required this.icon, required this.color});
+  const StatCard({required this.label, required this.value, required this.icon, required this.color});
 
   @override
   Widget build(BuildContext context) {

@@ -225,6 +225,37 @@ enum LeaveStatus {
   CANCELLED
 }
 
+enum TimetableStatus {
+  DRAFT
+  VALIDATED
+  PUBLISHED
+  ARCHIVED
+}
+
+enum AssignmentStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+  ARCHIVED
+}
+
+enum AssignmentType {
+  HOMEWORK
+  CLASSWORK
+  PROJECT
+  READING
+  PRACTICE
+  ACTIVITY
+  OTHER
+}
+
+enum SubmissionStatus {
+  OPEN
+  SUBMITTED
+  REVIEWED
+  CLOSED
+}
+
 model Organization {
   id          String   @id @default(uuid())
   name        String
@@ -292,6 +323,11 @@ model School {
   attendancePolicies AttendancePolicy[]
   attendanceSessions AttendanceSession[]
   leaveTypes         LeaveType[]
+  curriculums        Curriculum[]
+  teacherAvailabilities TeacherAvailability[]
+  timetablePeriods   TimetablePeriod[]
+  timetables         Timetable[]
+  assignments        Assignment[]
   auditLogs          AuditEvent[]
 }
 
@@ -312,6 +348,7 @@ model Campus {
   locations    Location[]
   enrollments  Enrollment[]
   applications AdmissionApplication[]
+  timetablePeriods TimetablePeriod[]
   auditLogs    AuditEvent[]
 }
 
@@ -334,6 +371,11 @@ model AcademicYear {
   applications   AdmissionApplication[]
   feeStructures  FeeStructure[]
   feeDemands     FeeDemand[]
+  curriculums    Curriculum[]
+  teacherSubjectAssignments TeacherSubjectAssignment[]
+  teacherAvailabilities TeacherAvailability[]
+  timetables     Timetable[]
+  assignments    Assignment[]
 }
 
 model Term {
@@ -346,6 +388,8 @@ model Term {
   academicYear   AcademicYear @relation(fields: [academicYearId], references: [id])
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
+
+  teacherSubjectAssignments TeacherSubjectAssignment[]
 
   @@unique([academicYearId, sequence])
 }
@@ -383,6 +427,11 @@ model Class {
   enrollments   Enrollment[]
   applications  AdmissionApplication[]
   feeStructures FeeStructure[]
+  curriculums   Curriculum[]
+  teacherSubjectAssignments TeacherSubjectAssignment[]
+  timetables    Timetable[]
+  substitutions Substitution[]
+  assignments   Assignment[]
 
   @@unique([schoolId, name, academicYearId])
 }
@@ -404,6 +453,10 @@ model Section {
   enrollments   Enrollment[]
   feeStructures FeeStructure[]
   attendanceSessions AttendanceSession[]
+  teacherSubjectAssignments TeacherSubjectAssignment[]
+  timetables    Timetable[]
+  substitutions Substitution[]
+  assignments   Assignment[]
 
   @@unique([classId, name])
 }
@@ -421,6 +474,11 @@ model Subject {
   updatedAt   DateTime @updatedAt
 
   classes     ClassSubject[]
+  curriculums Curriculum[]
+  teacherSubjectAssignments TeacherSubjectAssignment[]
+  timetableEntries TimetableEntry[]
+  substitutions Substitution[]
+  assignments Assignment[]
 
   @@unique([schoolId, code])
 }
@@ -447,6 +505,7 @@ model Location {
   updatedAt DateTime @updatedAt
 
   sections  Section[]
+  timetableEntries TimetableEntry[]
 }
 
 model House {
@@ -515,6 +574,13 @@ model Employee {
   attendanceRecords EmployeeAttendanceRecord[]
   leaveRequests     LeaveRequest[]
   leaveBalances     LeaveBalance[]
+  teacherSubjectAssignments TeacherSubjectAssignment[]
+  teacherAvailabilities TeacherAvailability[]
+  timetableEntries TimetableEntry[]
+  substitutionsOriginal Substitution[] @relation("OriginalEmployee")
+  substitutionsSubstitute Substitution[] @relation("SubstituteEmployee")
+  assignments     Assignment[]
+  feedbacks       AssignmentFeedback[]
 }
 
 model Student {
@@ -555,6 +621,7 @@ model Student {
   concessions    FeeConcession[]
   attendanceRecords StudentAttendanceRecord[]
   leaveRequests     LeaveRequest[]
+  submissions    AssignmentSubmission[]
   auditLogs      AuditEvent[]
 }
 
@@ -1304,6 +1371,246 @@ model LeaveTransaction {
   date           DateTime
   type           String       // FULL, HALF_MORNING, HALF_AFTERNOON
   createdAt      DateTime     @default(now())
+}
+
+// Phase 8: Academics, Timetable & Homework Models
+
+model Curriculum {
+  id             String           @id @default(uuid())
+  title          String
+  description    String?
+  academicYearId String
+  academicYear   AcademicYear     @relation(fields: [academicYearId], references: [id])
+  classId        String
+  class          Class            @relation(fields: [classId], references: [id])
+  subjectId      String
+  subject        Subject          @relation(fields: [subjectId], references: [id])
+  schoolId       String
+  school         School           @relation(fields: [schoolId], references: [id])
+  status         String           @default("DRAFT")
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  units          CurriculumUnit[]
+}
+
+model CurriculumUnit {
+  id             String     @id @default(uuid())
+  curriculumId   String
+  curriculum     Curriculum @relation(fields: [curriculumId], references: [id])
+  title          String
+  description    String?
+  learningObjectives String?
+  sequence       Int
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+}
+
+model TeacherSubjectAssignment {
+  id             String       @id @default(uuid())
+  employeeId     String
+  employee       Employee     @relation(fields: [employeeId], references: [id])
+  subjectId      String
+  subject        Subject      @relation(fields: [subjectId], references: [id])
+  classId        String
+  class          Class        @relation(fields: [classId], references: [id])
+  sectionId      String?
+  section        Section?     @relation(fields: [sectionId], references: [id])
+  academicYearId String
+  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id])
+  termId         String?
+  term           Term?        @relation(fields: [termId], references: [id])
+  isPrimary      Boolean      @default(true)
+  status         String       @default("ACTIVE")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([employeeId, subjectId, classId, sectionId, academicYearId])
+}
+
+model TeacherAvailability {
+  id             String       @id @default(uuid())
+  employeeId     String
+  employee       Employee     @relation(fields: [employeeId], references: [id])
+  dayOfWeek      Int          // 0-6
+  startTime      String       // HH:mm
+  endTime        String       // HH:mm
+  status         String       @default("AVAILABLE") // AVAILABLE, UNAVAILABLE, PARTIAL
+  academicYearId String
+  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id])
+  schoolId       String
+  school         School       @relation(fields: [schoolId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model TimetablePeriod {
+  id             String   @id @default(uuid())
+  schoolId       String
+  school         School   @relation(fields: [schoolId], references: [id])
+  campusId       String?
+  campus         Campus?  @relation(fields: [campusId], references: [id])
+  dayOfWeek      Int      // 1-7
+  periodNumber   Int
+  startTime      String   // HH:mm
+  endTime        String   // HH:mm
+  isBreak        Boolean  @default(false)
+  status         String   @default("ACTIVE")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  entries        TimetableEntry[]
+  substitutions  Substitution[]
+
+  @@unique([schoolId, campusId, dayOfWeek, periodNumber])
+}
+
+model Timetable {
+  id             String           @id @default(uuid())
+  name           String
+  academicYearId String
+  academicYear   AcademicYear     @relation(fields: [academicYearId], references: [id])
+  classId        String
+  class          Class            @relation(fields: [classId], references: [id])
+  sectionId      String
+  section        Section          @relation(fields: [sectionId], references: [id])
+  status         TimetableStatus  @default(DRAFT)
+  schoolId       String
+  school         School           @relation(fields: [schoolId], references: [id])
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  versions       TimetableVersion[]
+  currentVersion Int              @default(1)
+}
+
+model TimetableVersion {
+  id             String           @id @default(uuid())
+  timetableId    String
+  timetable      Timetable        @relation(fields: [timetableId], references: [id])
+  versionNumber  Int
+  publishedAt    DateTime?
+  publishedById  String?
+  status         String           @default("DRAFT")
+  createdAt      DateTime         @default(now())
+
+  entries        TimetableEntry[]
+}
+
+model TimetableEntry {
+  id                 String           @id @default(uuid())
+  timetableVersionId String
+  timetableVersion   TimetableVersion @relation(fields: [timetableVersionId], references: [id])
+  periodId           String
+  period             TimetablePeriod  @relation(fields: [periodId], references: [id])
+  subjectId          String
+  subject            Subject          @relation(fields: [subjectId], references: [id])
+  employeeId         String
+  employee           Employee         @relation(fields: [employeeId], references: [id])
+  roomId             String?
+  room               Location?        @relation(fields: [roomId], references: [id])
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+}
+
+model Substitution {
+  id                 String   @id @default(uuid())
+  date               DateTime
+  periodId           String
+  period             TimetablePeriod @relation(fields: [periodId], references: [id])
+  originalEmployeeId String
+  originalEmployee   Employee @relation("OriginalEmployee", fields: [originalEmployeeId], references: [id])
+  substituteEmployeeId String
+  substituteEmployee Employee @relation("SubstituteEmployee", fields: [substituteEmployeeId], references: [id])
+  subjectId          String
+  subject            Subject  @relation(fields: [subjectId], references: [id])
+  classId            String
+  class              Class    @relation(fields: [classId], references: [id])
+  sectionId          String
+  section            Section  @relation(fields: [sectionId], references: [id])
+  reason             String?
+  authorizedById     String
+  createdAt          DateTime @default(now())
+}
+
+model Assignment {
+  id             String           @id @default(uuid())
+  title          String
+  description    String?
+  instructions   String?
+  type           AssignmentType   @default(HOMEWORK)
+  subjectId      String
+  subject        Subject          @relation(fields: [subjectId], references: [id])
+  classId        String
+  class          Class            @relation(fields: [classId], references: [id])
+  sectionId      String?
+  section        Section?         @relation(fields: [sectionId], references: [id])
+  employeeId     String
+  employee       Employee         @relation(fields: [employeeId], references: [id])
+  academicYearId String
+  academicYear   AcademicYear     @relation(fields: [academicYearId], references: [id])
+  assignedDate   DateTime         @default(now())
+  dueDate        DateTime
+  priority       String           @default("NORMAL") // LOW, NORMAL, HIGH
+  status         AssignmentStatus @default(DRAFT)
+  schoolId       String
+  school         School           @relation(fields: [schoolId], references: [id])
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  attachments    AssignmentAttachment[]
+  submissions    AssignmentSubmission[]
+}
+
+model AssignmentAttachment {
+  id             String     @id @default(uuid())
+  assignmentId   String
+  assignment     Assignment @relation(fields: [assignmentId], references: [id])
+  fileName       String
+  fileType       String
+  fileUrl        String
+  fileSize       Int?
+  createdAt      DateTime   @default(now())
+}
+
+model AssignmentSubmission {
+  id             String           @id @default(uuid())
+  assignmentId   String
+  assignment     Assignment       @relation(fields: [assignmentId], references: [id])
+  studentId      String
+  student        Student          @relation(fields: [studentId], references: [id])
+  submittedAt    DateTime         @default(now())
+  content        String?
+  status         SubmissionStatus @default(SUBMITTED)
+  isLate         Boolean          @default(false)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  attachments    SubmissionAttachment[]
+  feedback       AssignmentFeedback?
+}
+
+model SubmissionAttachment {
+  id             String               @id @default(uuid())
+  submissionId   String
+  submission     AssignmentSubmission @relation(fields: [submissionId], references: [id])
+  fileName       String
+  fileType       String
+  fileUrl        String
+  createdAt      DateTime             @default(now())
+}
+
+model AssignmentFeedback {
+  id             String               @id @default(uuid())
+  submissionId   String               @unique
+  submission     AssignmentSubmission @relation(fields: [submissionId], references: [id])
+  employeeId     String
+  employee       Employee             @relation(fields: [employeeId], references: [id])
+  score          Float?
+  feedback       String?
+  reviewedAt     DateTime             @default(now())
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
 }
 
 model User {
