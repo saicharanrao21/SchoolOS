@@ -80,9 +80,101 @@ class ParentShell extends StatelessWidget {
       pages: [
         const ParentHome(),
         const ChildrenList(),
-        const Center(child: Text('Payment History')),
+        const ParentPayments(),
         const Center(child: Text('Profile Settings')),
       ],
+    );
+  }
+}
+
+class ParentPayments extends StatelessWidget {
+  const ParentPayments({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        const Text('Fee Summary', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.navyColor)),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppTheme.borderColor),
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
+          ),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Outstanding Balance', style: TextStyle(color: Colors.black54, fontSize: 13)),
+                      SizedBox(height: 4),
+                      Text('₹15,700.00', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppTheme.navyColor)),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(color: Colors.orange.withOpacity(0.1), borderRadius: BorderRadius.circular(15)),
+                    child: const Icon(Icons.priority_high_rounded, color: Colors.orange),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () {},
+                child: const Text('Pay Now'),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 32),
+        const Text('Recent Invoices', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.navyColor)),
+        const SizedBox(height: 16),
+        const InvoiceCard(id: 'INV-2026-00124', date: 'Aug 24, 2026', amount: '₹12,500', status: 'Paid'),
+        const InvoiceCard(id: 'INV-2026-00125', date: 'Aug 25, 2026', amount: '₹15,700', status: 'Pending'),
+      ],
+    );
+  }
+}
+
+class InvoiceCard extends StatelessWidget {
+  final String id;
+  final String date;
+  final String amount;
+  final String status;
+
+  const InvoiceCard({super.key, required this.id, required this.date, required this.amount, required this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    final isPaid = status == 'Paid';
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ListTile(
+        title: Text(id, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+        subtitle: Text(date, style: const TextStyle(fontSize: 12)),
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(amount, style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.navyColor)),
+            const SizedBox(height: 2),
+            Text(
+              status, 
+              style: TextStyle(
+                fontSize: 10, 
+                fontWeight: FontWeight.bold, 
+                color: isPaid ? Colors.green : Colors.orange
+              )
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -210,6 +302,92 @@ class TeacherShell extends StatelessWidget {
         Center(child: Text('Homework Assignments')),
         Center(child: Text('More Options')),
       ],
+    );
+  }
+}
+
+class ManagementShell extends StatelessWidget {
+  const ManagementShell({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return const RoleShell(
+      title: 'Admin Console',
+      destinations: [
+        NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'Dashboard'),
+        NavigationDestination(icon: Icon(Icons.people_outline), selectedIcon: Icon(Icons.people), label: 'Students'),
+        NavigationDestination(icon: Icon(Icons.account_balance_wallet_outlined), selectedIcon: Icon(Icons.account_balance_wallet), label: 'Finance'),
+        NavigationDestination(icon: Icon(Icons.menu), label: 'More'),
+      ],
+      pages: [
+        Center(child: Text('Management Dashboard')),
+        Center(child: Text('Student Directory')),
+        FinanceSummary(),
+        Center(child: Text('Settings & Logs')),
+      ],
+    );
+  }
+}
+
+class FinanceSummary extends StatelessWidget {
+  const FinanceSummary({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        const Text('Today\'s Collection', style: TextStyle(color: Colors.black54)),
+        const Text('₹1,42,500', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppTheme.navyColor)),
+        const SizedBox(height: 24),
+        GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: 2,
+          mainAxisSpacing: 16,
+          crossAxisSpacing: 16,
+          childAspectRatio: 1.5,
+          children: const [
+            StatCard(label: 'Total Billed', value: '48.2L', icon: Icons.receipt_long, color: Colors.blue),
+            StatCard(label: 'Collected', value: '32.5L', icon: Icons.check_circle, color: Colors.green),
+            StatCard(label: 'Outstanding', value: '15.7L', icon: Icons.pending, color: Colors.orange),
+            StatCard(label: 'Overdue', value: '4.2L', icon: Icons.warning, color: Colors.red),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class StatCard extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color color;
+
+  const StatCard({super.key, required this.label, required this.value, required this.icon, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.borderColor),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Icon(icon, color: color, size: 20),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.navyColor)),
+              Text(label, style: const TextStyle(fontSize: 10, color: Colors.black54, fontWeight: FontWeight.bold)),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

@@ -19,7 +19,9 @@ import {
   Briefcase,
   UserPlus,
   FileText,
-  Mail
+  Mail,
+  Wallet,
+  Plus
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -37,6 +39,16 @@ const navItems = [
       { label: 'Dashboard', href: '/management/admissions/dashboard', icon: LayoutDashboard },
       { label: 'Leads & Enquiries', href: '/management/admissions/enquiries', icon: Mail },
       { label: 'Applications', href: '/management/admissions/applications', icon: FileText },
+    ]
+  },
+  {
+    label: 'Finance',
+    icon: Wallet,
+    children: [
+      { label: 'Dashboard', href: '/management/finance/dashboard', icon: LayoutDashboard },
+      { label: 'Fee Structures', href: '/management/finance/fee-structures', icon: Layers },
+      { label: 'Invoices', href: '/management/finance/invoices', icon: FileText },
+      { label: 'Collect Fee', href: '/management/finance/collect', icon: Plus },
     ]
   },
   { label: 'Students', icon: Users, href: '/management/students' },
