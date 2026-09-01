@@ -15,6 +15,7 @@ import { FinanceModule } from './modules/finance/finance.module';
 import { AccountingModule } from './modules/accounting/accounting.module';
 import { AttendanceModule } from './modules/attendance/attendance.module';
 import { LeaveModule } from './modules/leave/leave.module';
+import { ExamsModule } from './modules/exams/exams.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { LeaveModule } from './modules/leave/leave.module';
     AccountingModule,
     AttendanceModule,
     LeaveModule,
+    ExamsModule,
   ],
 })
 export class AppModule {}

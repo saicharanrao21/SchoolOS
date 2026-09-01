@@ -256,6 +256,27 @@ enum SubmissionStatus {
   CLOSED
 }
 
+enum ExaminationStatus {
+  DRAFT
+  SCHEDULED
+  ONGOING
+  COMPLETED
+  UNDER_REVIEW
+  APPROVED
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ResultStatus {
+  DRAFT
+  CALCULATED
+  UNDER_REVIEW
+  MODERATED
+  APPROVED
+  PUBLISHED
+  LOCKED
+}
+
 model Organization {
   id          String   @id @default(uuid())
   name        String
@@ -328,6 +349,11 @@ model School {
   timetablePeriods   TimetablePeriod[]
   timetables         Timetable[]
   assignments        Assignment[]
+  examTypes          ExamType[]
+  assessmentComponents AssessmentComponent[]
+  examinations       Examination[]
+  gradingSystems     GradingSystem[]
+  reportCardTemplates ReportCardTemplate[]
   auditLogs          AuditEvent[]
 }
 
@@ -349,6 +375,7 @@ model Campus {
   enrollments  Enrollment[]
   applications AdmissionApplication[]
   timetablePeriods TimetablePeriod[]
+  examSchedules ExamSchedule[]
   auditLogs    AuditEvent[]
 }
 
@@ -376,6 +403,9 @@ model AcademicYear {
   teacherAvailabilities TeacherAvailability[]
   timetables     Timetable[]
   assignments    Assignment[]
+  examinations   Examination[]
+  results        Result[]
+  reportCards    ReportCard[]
 }
 
 model Term {
@@ -390,6 +420,7 @@ model Term {
   updatedAt      DateTime     @updatedAt
 
   teacherSubjectAssignments TeacherSubjectAssignment[]
+  examinations   Examination[]
 
   @@unique([academicYearId, sequence])
 }
@@ -432,6 +463,9 @@ model Class {
   timetables    Timetable[]
   substitutions Substitution[]
   assignments   Assignment[]
+  examSchedules ExamSchedule[]
+  results       Result[]
+  reportCards   ReportCard[]
 
   @@unique([schoolId, name, academicYearId])
 }
@@ -457,6 +491,9 @@ model Section {
   timetables    Timetable[]
   substitutions Substitution[]
   assignments   Assignment[]
+  examSchedules ExamSchedule[]
+  results       Result[]
+  reportCards   ReportCard[]
 
   @@unique([classId, name])
 }
@@ -479,6 +516,10 @@ model Subject {
   timetableEntries TimetableEntry[]
   substitutions Substitution[]
   assignments Assignment[]
+  examSubjects ExamSubject[]
+  examSchedules ExamSchedule[]
+  markEntries  MarkEntry[]
+  resultSubjects ResultSubject[]
 
   @@unique([schoolId, code])
 }
@@ -506,6 +547,7 @@ model Location {
 
   sections  Section[]
   timetableEntries TimetableEntry[]
+  examSchedules ExamSchedule[]
 }
 
 model House {
@@ -581,6 +623,9 @@ model Employee {
   substitutionsSubstitute Substitution[] @relation("SubstituteEmployee")
   assignments     Assignment[]
   feedbacks       AssignmentFeedback[]
+  examSchedules   ExamSchedule[] @relation("Invigilator")
+  markEntries     MarkEntry[]
+  remarkRecords   TeacherRemark[]
 }
 
 model Student {
@@ -622,6 +667,11 @@ model Student {
   attendanceRecords StudentAttendanceRecord[]
   leaveRequests     LeaveRequest[]
   submissions    AssignmentSubmission[]
+  examAttendance ExamAttendance[]
+  markEntryLines MarkEntryLine[]
+  results        Result[]
+  reportCards    ReportCard[]
+  remarks        TeacherRemark[]
   auditLogs      AuditEvent[]
 }
 
@@ -1611,6 +1661,305 @@ model AssignmentFeedback {
   reviewedAt     DateTime             @default(now())
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
+}
+
+// Phase 9: Exams, Results & Report Cards Models
+
+model ExamType {
+  id          String   @id @default(uuid())
+  name        String   // Unit Test, Annual Exam, etc.
+  description String?
+  schoolId    String
+  school      School   @relation(fields: [schoolId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  examinations Examination[]
+
+  @@unique([schoolId, name])
+}
+
+model AssessmentComponent {
+  id          String   @id @default(uuid())
+  name        String   // Theory, Practical, etc.
+  maxMarks    Float
+  passMarks   Float
+  weightage   Float?   // Percentage 0-100
+  schoolId    String
+  school      School   @relation(fields: [schoolId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  examSubjectComponents ExamSubjectComponent[]
+  markEntryLines         MarkEntryLine[]
+
+  @@unique([schoolId, name])
+}
+
+model Examination {
+  id             String            @id @default(uuid())
+  name           String
+  academicYearId String
+  academicYear   AcademicYear      @relation(fields: [academicYearId], references: [id])
+  termId         String?
+  term           Term?             @relation(fields: [termId], references: [id])
+  examTypeId     String
+  examType       ExamType          @relation(fields: [examTypeId], references: [id])
+  startDate      DateTime
+  endDate        DateTime
+  status         ExaminationStatus @default(DRAFT)
+  schoolId       String
+  school         School            @relation(fields: [schoolId], references: [id])
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  subjects       ExamSubject[]
+  schedules      ExamSchedule[]
+  results        Result[]
+  markEntries    MarkEntry[]
+}
+
+model ExamSubject {
+  id             String      @id @default(uuid())
+  examinationId  String
+  examination    Examination @relation(fields: [examinationId], references: [id])
+  subjectId      String
+  subject        Subject     @relation(fields: [subjectId], references: [id])
+  maxMarks       Float
+  passMarks      Float
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  components     ExamSubjectComponent[]
+  schedules      ExamSchedule[]
+  markEntries    MarkEntry[]
+
+  @@unique([examinationId, subjectId])
+}
+
+model ExamSubjectComponent {
+  id             String              @id @default(uuid())
+  examSubjectId  String
+  examSubject    ExamSubject         @relation(fields: [examSubjectId], references: [id])
+  componentId    String
+  component      AssessmentComponent @relation(fields: [componentId], references: [id])
+  maxMarks       Float
+  passMarks      Float
+  weightage      Float?
+  createdAt      DateTime            @default(now())
+
+  @@unique([examSubjectId, componentId])
+}
+
+model ExamSchedule {
+  id             String       @id @default(uuid())
+  examinationId  String
+  examination    Examination  @relation(fields: [examinationId], references: [id])
+  subjectId      String
+  subject        Subject      @relation(fields: [subjectId], references: [id])
+  examSubjectId  String
+  examSubject    ExamSubject  @relation(fields: [examSubjectId], references: [id])
+  classId        String
+  class          Class        @relation(fields: [classId], references: [id])
+  sectionId      String?
+  section        Section?     @relation(fields: [sectionId], references: [id])
+  campusId       String?
+  campus         Campus?      @relation(fields: [campusId], references: [id])
+  date           DateTime
+  startTime      String       // HH:mm
+  endTime        String       // HH:mm
+  roomId         String?
+  room           Location?    @relation(fields: [roomId], references: [id])
+  invigilatorId  String?
+  invigilator    Employee?    @relation("Invigilator", fields: [invigilatorId], references: [id])
+  instructions   String?
+  status         String       @default("SCHEDULED")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  attendance     ExamAttendance[]
+}
+
+model ExamAttendance {
+  id             String       @id @default(uuid())
+  scheduleId     String
+  schedule       ExamSchedule @relation(fields: [scheduleId], references: [id])
+  studentId      String
+  student        Student      @relation(fields: [studentId], references: [id])
+  status         String       @default("PRESENT") // PRESENT, ABSENT, EXCUSED
+  remarks        String?
+  createdAt      DateTime     @default(now())
+
+  @@unique([scheduleId, studentId])
+}
+
+model MarkEntry {
+  id             String       @id @default(uuid())
+  examinationId  String
+  examination    Examination  @relation(fields: [examinationId], references: [id])
+  examSubjectId  String
+  examSubject    ExamSubject  @relation(fields: [examSubjectId], references: [id])
+  subjectId      String
+  subject        Subject      @relation(fields: [subjectId], references: [id])
+  employeeId     String
+  employee       Employee     @relation(fields: [employeeId], references: [id])
+  status         String       @default("DRAFT") // DRAFT, SUBMITTED, LOCKED
+  submittedAt    DateTime?
+  lockedAt       DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  lines          MarkEntryLine[]
+}
+
+model MarkEntryLine {
+  id             String              @id @default(uuid())
+  markEntryId    String
+  markEntry      MarkEntry           @relation(fields: [markEntryId], references: [id])
+  studentId      String
+  student        Student             @relation(fields: [studentId], references: [id])
+  componentId    String?
+  component      AssessmentComponent? @relation(fields: [componentId], references: [id])
+  marksObtained  Float?
+  isAbsent       Boolean             @default(false)
+  isExempted     Boolean             @default(false)
+  remarks        String?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  @@unique([markEntryId, studentId, componentId])
+}
+
+model GradingSystem {
+  id             String      @id @default(uuid())
+  name           String
+  schoolId       String
+  school         School      @relation(fields: [schoolId], references: [id])
+  isActive       Boolean     @default(true)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  rules          GradeRule[]
+  results        Result[]
+}
+
+model GradeRule {
+  id              String        @id @default(uuid())
+  gradingSystemId String
+  gradingSystem   GradingSystem @relation(fields: [gradingSystemId], references: [id])
+  gradeCode       String        // A+, A, etc.
+  minPercentage   Float
+  maxPercentage   Float
+  gradePoint      Float
+  description     String?
+  isPassing       Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+
+  @@unique([gradingSystemId, gradeCode])
+}
+
+model Result {
+  id             String       @id @default(uuid())
+  studentId      String
+  student        Student      @relation(fields: [studentId], references: [id])
+  examinationId  String
+  examination    Examination  @relation(fields: [examinationId], references: [id])
+  academicYearId String
+  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id])
+  classId        String
+  class          Class        @relation(fields: [classId], references: [id])
+  sectionId      String
+  section        Section      @relation(fields: [sectionId], references: [id])
+  gradingSystemId String?
+  gradingSystem   GradingSystem? @relation(fields: [gradingSystemId], references: [id])
+  totalMarks      Float
+  maxMarks        Float
+  percentage      Float
+  grade           String?
+  status          ResultStatus @default(DRAFT)
+  overallResult   String?      // PASS, FAIL, etc.
+  rank            Int?
+  publishedAt     DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  subjects        ResultSubject[]
+  snapshots       ResultSnapshot[]
+
+  @@unique([studentId, examinationId])
+}
+
+model ResultSubject {
+  id             String   @id @default(uuid())
+  resultId       String
+  result         Result   @relation(fields: [resultId], references: [id])
+  subjectId      String
+  subject        Subject  @relation(fields: [subjectId], references: [id])
+  marksObtained  Float
+  maxMarks       Float
+  percentage     Float
+  grade          String?
+  isPassing      Boolean  @default(true)
+  createdAt      DateTime @default(now())
+
+  @@unique([resultId, subjectId])
+}
+
+model ResultSnapshot {
+  id             String   @id @default(uuid())
+  resultId       String
+  result         Result   @relation(fields: [resultId], references: [id])
+  data           Json     // Complete result JSON for immutability
+  version        Int
+  publishedAt    DateTime @default(now())
+  publishedById  String
+  createdAt      DateTime @default(now())
+}
+
+model ReportCardTemplate {
+  id             String   @id @default(uuid())
+  name           String
+  schoolId       String
+  school         School   @relation(fields: [schoolId], references: [id])
+  config         Json
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  reportCards    ReportCard[]
+}
+
+model ReportCard {
+  id                 String             @id @default(uuid())
+  studentId          String
+  student            Student            @relation(fields: [studentId], references: [id])
+  academicYearId     String
+  academicYear       AcademicYear       @relation(fields: [academicYearId], references: [id])
+  classId            String
+  class              Class              @relation(fields: [classId], references: [id])
+  sectionId          String
+  section            Section            @relation(fields: [sectionId], references: [id])
+  templateId         String
+  template           ReportCardTemplate @relation(fields: [templateId], references: [id])
+  data               Json
+  fileUrl            String?
+  publishedAt        DateTime?
+  status             String             @default("DRAFT")
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+}
+
+model TeacherRemark {
+  id             String   @id @default(uuid())
+  studentId      String
+  student        Student  @relation(fields: [studentId], references: [id])
+  employeeId     String
+  employee       Employee @relation(fields: [employeeId], references: [id])
+  termId         String?
+  examinationId  String?
+  remark         String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
 
 model User {

@@ -27,7 +27,9 @@ import {
   BarChart3,
   CheckCircle2,
   Clock,
-  Library
+  Library,
+  GraduationCap,
+  FileSpreadsheet
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -45,6 +47,16 @@ const navItems = [
       { label: 'Timetables', href: '/management/academics/timetables', icon: Calendar },
       { label: 'Curriculum', href: '/management/academics/curriculum', icon: Library },
       { label: 'Homework', href: '/management/academics/homework', icon: FileText },
+    ]
+  },
+  {
+    label: 'Examinations',
+    icon: GraduationCap,
+    children: [
+      { label: 'Dashboard', href: '/management/exams/dashboard', icon: LayoutDashboard },
+      { label: 'Exam List', href: '/management/exams/examinations', icon: Calendar },
+      { label: 'Marks Entry', href: '/management/exams/mark-entry', icon: FileSpreadsheet },
+      { label: 'Result Sheets', href: '/management/exams/results', icon: ShieldCheck },
     ]
   },
   {

@@ -74,15 +74,66 @@ class ParentShell extends StatelessWidget {
       destinations: const [
         NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
         NavigationDestination(icon: Icon(Icons.school_outlined), selectedIcon: Icon(Icons.school), label: 'Academics'),
+        NavigationDestination(icon: Icon(Icons.assignment_turned_in_outlined), selectedIcon: Icon(Icons.assignment_turned_in), label: 'Results'),
         NavigationDestination(icon: Icon(Icons.payments_outlined), selectedIcon: Icon(Icons.payments), label: 'Payments'),
-        NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profile'),
       ],
       pages: [
         const ParentHome(),
         const ChildAcademics(),
+        const ChildResults(),
         const ParentPayments(),
-        const Center(child: Text('Profile Settings')),
       ],
+    );
+  }
+}
+
+class ChildResults extends StatelessWidget {
+  const ChildResults({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        const Text('Exam Results', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.navyColor)),
+        const SizedBox(height: 20),
+        const ResultCard(examName: 'Unit Test 1', percentage: '88.5%', grade: 'A', status: 'Published'),
+        const ResultCard(examName: 'Monthly Test', percentage: '72.1%', grade: 'B', status: 'Published'),
+      ],
+    );
+  }
+}
+
+class ResultCard extends StatelessWidget {
+  final String examName;
+  final String percentage;
+  final String grade;
+  final String status;
+
+  const ResultCard({super.key, required this.examName, required this.percentage, required this.grade, required this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ListTile(
+        title: Text(examName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+        subtitle: Text(status, style: const TextStyle(fontSize: 11, color: Colors.green, fontWeight: FontWeight.bold)),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(percentage, style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.navyColor)),
+                Text('Grade $grade', style: const TextStyle(fontSize: 10, color: Colors.black38)),
+              ],
+            ),
+            const SizedBox(width: 8),
+            const Icon(Icons.chevron_right, size: 16, color: Colors.black12),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -341,14 +392,57 @@ class TeacherShell extends StatelessWidget {
         NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'Home'),
         NavigationDestination(icon: Icon(Icons.calendar_today_outlined), selectedIcon: Icon(Icons.calendar_today), label: 'Timetable'),
         NavigationDestination(icon: Icon(Icons.assignment_outlined), selectedIcon: Icon(Icons.assignment), label: 'Homework'),
-        NavigationDestination(icon: Icon(Icons.how_to_reg_outlined), selectedIcon: Icon(Icons.how_to_reg), label: 'Attendance'),
+        NavigationDestination(icon: Icon(Icons.border_color_outlined), selectedIcon: Icon(Icons.border_color), label: 'Exams'),
       ],
       pages: [
         const TeacherDashboard(),
         const TeacherTimetable(),
         const TeacherHomework(),
-        const AttendanceMarking(),
+        const TeacherExams(),
       ],
+    );
+  }
+}
+
+class TeacherExams extends StatelessWidget {
+  const TeacherExams({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        const Text('Examination Tasks', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.navyColor)),
+        const SizedBox(height: 20),
+        const ExamTaskTile(title: 'Term 1 Final - Mathematics', sub: 'Marks Entry Pending', students: '0/38'),
+        const ExamTaskTile(title: 'Monthly Test - Physics', sub: 'Completed', students: '40/40'),
+      ],
+    );
+  }
+}
+
+class ExamTaskTile extends StatelessWidget {
+  final String title;
+  final String sub;
+  final String students;
+
+  const ExamTaskTile({super.key, required this.title, required this.sub, required this.students});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ListTile(
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+        subtitle: Text(sub, style: const TextStyle(fontSize: 12)),
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(students, style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+            const Text('Students', style: TextStyle(fontSize: 10, color: Colors.black26)),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -595,13 +689,13 @@ class StudentShell extends StatelessWidget {
       destinations: [
         NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'Home'),
         NavigationDestination(icon: Icon(Icons.calendar_today_outlined), selectedIcon: Icon(Icons.calendar_today), label: 'Timetable'),
-        NavigationDestination(icon: Icon(Icons.assignment_outlined), selectedIcon: Icon(Icons.assignment), label: 'Homework'),
+        NavigationDestination(icon: Icon(Icons.assignment_turned_in_outlined), selectedIcon: Icon(Icons.assignment_turned_in), label: 'Results'),
         NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profile'),
       ],
       pages: [
         const StudentHome(),
-        const TeacherTimetable(), // Reusing for now
-        const TeacherHomework(), // Reusing for now
+        const TeacherTimetable(),
+        const ChildResults(),
         const Center(child: Text('My Profile')),
       ],
     );
