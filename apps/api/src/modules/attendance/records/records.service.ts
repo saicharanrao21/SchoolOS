@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { DatabaseService } from '../../../database/database.service';
 import { AuditService } from '../../../audit/audit.service';
 import { Prisma, AttendanceStatus, AttendanceSessionStatus } from '@prisma/client';
@@ -8,6 +9,7 @@ export class AttendanceRecordsService {
   constructor(
     private readonly db: DatabaseService,
     private readonly audit: AuditService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async markBulk(organizationId: string, sessionId: string, records: any[], actorId: string) {
@@ -22,7 +24,7 @@ export class AttendanceRecordsService {
 
     return this.db.$transaction(async (tx: Prisma.TransactionClient) => {
       for (const record of records) {
-        await tx.studentAttendanceRecord.upsert({
+        const result = await tx.studentAttendanceRecord.upsert({
           where: {
             sessionId_studentId: {
               sessionId,
@@ -46,6 +48,23 @@ export class AttendanceRecordsService {
             markedById: actorId,
           },
         });
+
+        // Emit event for absence or lateness
+        if (record.status === AttendanceStatus.ABSENT) {
+          this.eventEmitter.emit('student.absent', {
+            organizationId,
+            schoolId: session.schoolId,
+            studentId: record.studentId,
+            date: session.date,
+          });
+        } else if (record.status === AttendanceStatus.LATE) {
+          this.eventEmitter.emit('student.late', {
+            organizationId,
+            schoolId: session.schoolId,
+            studentId: record.studentId,
+            date: session.date,
+          });
+        }
       }
 
       // Update session status to IN_PROGRESS if it was OPEN

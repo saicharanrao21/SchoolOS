@@ -16,12 +16,15 @@ import { AccountingModule } from './modules/accounting/accounting.module';
 import { AttendanceModule } from './modules/attendance/attendance.module';
 import { LeaveModule } from './modules/leave/leave.module';
 import { ExamsModule } from './modules/exams/exams.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    EventEmitterModule.forRoot(),
     DatabaseModule,
     HealthModule,
     AuthModule,
@@ -38,6 +41,7 @@ import { ExamsModule } from './modules/exams/exams.module';
     AttendanceModule,
     LeaveModule,
     ExamsModule,
+    NotificationsModule,
   ],
 })
 export class AppModule {}

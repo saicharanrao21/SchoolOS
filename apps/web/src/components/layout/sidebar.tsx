@@ -28,6 +28,8 @@ import {
   CheckCircle2,
   Clock,
   Library,
+  Bell,
+  Settings2,
   GraduationCap,
   FileSpreadsheet
 } from 'lucide-react';
@@ -96,6 +98,16 @@ const navItems = [
       { label: 'Chart of Accounts', href: '/management/accounting/chart-of-accounts', icon: FolderTree },
       { label: 'Journal Entries', href: '/management/accounting/journal-entries', icon: FileText },
       { label: 'Financial Reports', href: '/management/accounting/reports', icon: BarChart3 },
+    ]
+  },
+  {
+    label: 'Notifications',
+    icon: Bell,
+    children: [
+      { label: 'Dashboard', href: '/management/notifications/dashboard', icon: LayoutDashboard },
+      { label: 'Templates', href: '/management/notifications/templates', icon: FileText },
+      { label: 'Delivery Logs', href: '/management/notifications/logs', icon: History },
+      { label: 'Settings', href: '/management/notifications/rules', icon: Settings2 },
     ]
   },
   { label: 'Students', icon: Users, href: '/management/students' },

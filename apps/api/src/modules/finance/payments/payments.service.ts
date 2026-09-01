@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { DatabaseService } from '../../../database/database.service';
 import { AuditService } from '../../../audit/audit.service';
 import { AccountingIntegrationService } from '../../accounting/accounting-integration.service';
@@ -10,6 +11,7 @@ export class PaymentsService {
     private readonly db: DatabaseService,
     private readonly audit: AuditService,
     private readonly accounting: AccountingIntegrationService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async collect(organizationId: string, data: any, actorId: string) {
@@ -29,7 +31,7 @@ export class PaymentsService {
     }
 
     return this.db.$transaction(async (tx) => {
-      // 1. Create Payment Record
+      // ... (previous logic)
       const payment = await tx.payment.create({
         data: {
           studentId: student.id,
@@ -44,7 +46,7 @@ export class PaymentsService {
         },
       });
 
-      // 2. Generate Receipt
+      // ... (receipt, demand, account, ledger logic)
       const receiptNumber = await this.generateReceiptNumber(tx, student.schoolId);
       await tx.receipt.create({
         data: {
@@ -53,7 +55,6 @@ export class PaymentsService {
         },
       });
 
-      // 3. Update Fee Demand
       const newPaidAmount = demand.paidAmount.add(amount);
       const newBalanceAmount = demand.balanceAmount.sub(amount);
       let status: InvoiceStatus = InvoiceStatus.PARTIALLY_PAID;
@@ -70,7 +71,6 @@ export class PaymentsService {
         },
       });
 
-      // 4. Update Student Fee Account
       await tx.studentFeeAccount.update({
         where: { studentId: student.id },
         data: {
@@ -79,7 +79,6 @@ export class PaymentsService {
         },
       });
 
-      // 5. Create Ledger Entry
       await tx.financialLedgerEntry.create({
         data: {
           type: 'PAYMENT',
@@ -102,14 +101,22 @@ export class PaymentsService {
         metadata: { amount: amount.toNumber(), method: data.method },
       });
 
+      // Emit notification event
+      this.eventEmitter.emit('payment.received', {
+        organizationId,
+        schoolId: student.schoolId,
+        studentId: student.id,
+        amount: amount.toNumber(),
+        receiptNumber,
+      });
+
       // Integrate with Accounting
       this.accounting.handlePaymentReceived(organizationId, payment.id, actorId);
 
       return payment;
     });
   }
-
-  private async generateReceiptNumber(tx: any, schoolId: string): Promise<string> {
+private async generateReceiptNumber(tx: any, schoolId: string): Promise<string> {
     const year = new Date().getFullYear().toString();
     const count = await tx.receipt.count({
       where: { payment: { student: { schoolId } } },

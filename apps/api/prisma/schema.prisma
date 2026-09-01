@@ -277,6 +277,31 @@ enum ResultStatus {
   LOCKED
 }
 
+enum NotificationChannel {
+  IN_APP
+  PUSH
+  EMAIL
+  SMS
+  WHATSAPP
+}
+
+enum NotificationStatus {
+  QUEUED
+  PROCESSING
+  SENT
+  DELIVERED
+  FAILED
+  CANCELLED
+  RETRYING
+}
+
+enum NotificationPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
 model Organization {
   id          String   @id @default(uuid())
   name        String
@@ -354,6 +379,9 @@ model School {
   examinations       Examination[]
   gradingSystems     GradingSystem[]
   reportCardTemplates ReportCardTemplate[]
+  notificationTemplates NotificationTemplate[]
+  notificationProviders NotificationProvider[]
+  announcements      SchoolAnnouncement[]
   auditLogs          AuditEvent[]
 }
 
@@ -1560,7 +1588,7 @@ model TimetableEntry {
   roomId             String?
   room               Location?        @relation(fields: [roomId], references: [id])
   createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
+  updatedAt      DateTime         @updatedAt
 }
 
 model Substitution {
@@ -1987,6 +2015,9 @@ model User {
   followUps         AdmissionFollowUp[]
   assignedApplications AdmissionApplication[]
   collectedPayments Payment[]            @relation("PaymentCollector")
+  notifications  Notification[] @relation("NotificationRecipient")
+  devices        NotificationDevice[]
+  notificationPreferences NotificationPreference[]
 }
 
 model Role {
@@ -2070,4 +2101,118 @@ model AuditEvent {
 
   student        Student?      @relation(fields: [studentId], references: [id])
   studentId      String?
+}
+
+// Phase 10: Unified Notification Platform Models
+
+model NotificationTemplate {
+  id             String               @id @default(uuid())
+  name           String
+  event          String               // e.g. "student.absent"
+  channel        NotificationChannel
+  subject        String?
+  body           String
+  language       String               @default("en")
+  variables      Json?                // List of allowed variables
+  schoolId       String
+  school         School               @relation(fields: [schoolId], references: [id])
+  isActive       Boolean              @default(true)
+  version        Int                  @default(1)
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  notifications  Notification[]
+
+  @@unique([schoolId, event, channel, language, version])
+}
+
+model Notification {
+  id                 String              @id @default(uuid())
+  organizationId     String
+  schoolId           String
+  campusId           String?
+  eventId            String?             // External event reference
+  event              String              // Event name
+  recipientId        String
+  recipient          User                @relation("NotificationRecipient", fields: [recipientId], references: [id])
+  channel            NotificationChannel
+  templateId         String?
+  template           NotificationTemplate? @relation(fields: [templateId], references: [id])
+  priority           NotificationPriority @default(NORMAL)
+  status             NotificationStatus   @default(QUEUED)
+  subject            String?
+  body               String
+  metadata           Json?
+  scheduledAt        DateTime?
+  sentAt             DateTime?
+  deliveredAt        DateTime?
+  failedAt           DateTime?
+  retryCount         Int                 @default(0)
+  errorCode          String?
+  errorMessage       String?
+  provider           String?
+  providerMessageId  String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  @@index([organizationId, schoolId, status])
+  @@index([recipientId, status])
+}
+
+model NotificationDevice {
+  id             String   @id @default(uuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id])
+  deviceId       String
+  platform       String   // android, ios
+  pushToken      String
+  appVersion     String?
+  isActive       Boolean  @default(true)
+  lastSeen       DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([userId, deviceId])
+}
+
+model NotificationPreference {
+  id             String              @id @default(uuid())
+  userId         String
+  user           User                @relation(fields: [userId], references: [id])
+  event          String              // e.g. "attendance.*" or "fee.due"
+  channel        NotificationChannel
+  isEnabled      Boolean             @default(true)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  @@unique([userId, event, channel])
+}
+
+model NotificationProvider {
+  id             String              @id @default(uuid())
+  name           String
+  channel        NotificationChannel
+  config         Json                // Encrypted or secure storage
+  schoolId       String?             // Null for system-wide default
+  school         School?             @relation(fields: [schoolId], references: [id])
+  isActive       Boolean              @default(true)
+  isDefault      Boolean              @default(false)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+}
+
+model SchoolAnnouncement {
+  id             String   @id @default(uuid())
+  title          String
+  message        String
+  schoolId       String
+  school         School   @relation(fields: [schoolId], references: [id])
+  targetRoles    String[] // Roles like PARENT, TEACHER
+  targetClasses  String[] // Optional class IDs
+  channels       NotificationChannel[]
+  scheduledAt    DateTime?
+  expiresAt      DateTime?
+  status         String   @default("DRAFT") // DRAFT, PUBLISHED, ARCHIVED
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
