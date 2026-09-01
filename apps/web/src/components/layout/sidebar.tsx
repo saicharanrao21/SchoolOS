@@ -24,7 +24,9 @@ import {
   Plus,
   Landmark,
   FolderTree,
-  BarChart3
+  BarChart3,
+  CheckCircle2,
+  Clock
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -35,6 +37,16 @@ function cn(...inputs: ClassValue[]) {
 
 const navItems = [
   { label: 'Dashboard', icon: LayoutDashboard, href: '/management/dashboard' },
+  {
+    label: 'Attendance',
+    icon: CheckCircle2,
+    children: [
+      { label: 'Dashboard', href: '/management/attendance/dashboard', icon: LayoutDashboard },
+      { label: 'Mark Attendance', href: '/management/attendance/mark', icon: CheckCircle2 },
+      { label: 'Corrections', href: '/management/attendance/corrections', icon: Clock },
+      { label: 'Leave Requests', href: '/management/attendance/leave-requests', icon: FileText },
+    ]
+  },
   {
     label: 'Admissions',
     icon: UserPlus,

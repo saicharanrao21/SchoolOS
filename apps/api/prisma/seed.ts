@@ -27,7 +27,9 @@ async function main() {
     'audit.read',
     'academic_year.read', 'academic_year.create', 'academic_year.update',
     'class.read', 'class.create', 'class.update',
-    'department.read', 'department.create', 'location.read', 'location.create'
+    'department.read', 'department.create', 'location.read', 'location.create',
+    'attendance.read', 'attendance.mark', 'attendance.lock', 'attendance.correct', 'attendance.approve', 'attendance.policy.manage',
+    'leave.read', 'leave.request', 'leave.approve', 'leave.manage', 'leave.policy.manage'
   ];
 
   for (const p of permissions) {
@@ -91,18 +93,22 @@ async function main() {
   });
 
   // 7. Create Academic Year
-  const ay = await prisma.academicYear.upsert({
-    where: { schoolId_name: { schoolId: demoSchool.id, name: '2026-27' } },
-    update: {},
-    create: {
-      name: '2026-27',
-      startDate: new Date('2026-08-01'),
-      endDate: new Date('2027-05-31'),
-      status: AcademicYearStatus.ACTIVE,
-      isCurrent: true,
-      schoolId: demoSchool.id,
-    },
+  let ay = await prisma.academicYear.findFirst({
+    where: { schoolId: demoSchool.id, name: '2026-27' },
   });
+
+  if (!ay) {
+    ay = await prisma.academicYear.create({
+      data: {
+        name: '2026-27',
+        startDate: new Date('2026-08-01'),
+        endDate: new Date('2027-05-31'),
+        status: AcademicYearStatus.ACTIVE,
+        isCurrent: true,
+        schoolId: demoSchool.id,
+      },
+    });
+  }
 
   // 8. Create Classes
   for (let i = 1; i <= 10; i++) {

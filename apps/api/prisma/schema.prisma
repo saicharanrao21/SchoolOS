@@ -188,6 +188,43 @@ enum JournalEntryStatus {
   VOID
 }
 
+enum AttendanceMode {
+  DAILY
+  PERIOD
+  SESSION
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  HALF_DAY
+  EXCUSED
+  ON_LEAVE
+}
+
+enum AttendanceSessionStatus {
+  OPEN
+  IN_PROGRESS
+  SUBMITTED
+  LOCKED
+}
+
+enum CorrectionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum LeaveStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
 model Organization {
   id          String   @id @default(uuid())
   name        String
@@ -235,23 +272,27 @@ model School {
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
-  campuses       Campus[]
-  academicYears  AcademicYear[]
-  departments    Department[]
-  classes        Class[]
-  subjects       Subject[]
-  houses         House[]
-  settings       SchoolSetting[]
-  students       Student[]
-  enquiries      AdmissionEnquiry[]
-  applications   AdmissionApplication[]
-  feeCategories  FeeCategory[]
-  feeStructures  FeeStructure[]
-  fiscalYears    FiscalYear[]
-  accounts       ChartOfAccount[]
-  journals       Journal[]
-  costCenters    CostCenter[]
-  auditLogs      AuditEvent[]
+  campuses           Campus[]
+  academicYears      AcademicYear[]
+  departments        Department[]
+  classes            Class[]
+  subjects           Subject[]
+  houses             House[]
+  settings           SchoolSetting[]
+  students           Student[]
+  employees          Employee[]
+  enquiries          AdmissionEnquiry[]
+  applications       AdmissionApplication[]
+  feeCategories      FeeCategory[]
+  feeStructures      FeeStructure[]
+  fiscalYears        FiscalYear[]
+  accounts           ChartOfAccount[]
+  journals           Journal[]
+  costCenters        CostCenter[]
+  attendancePolicies AttendancePolicy[]
+  attendanceSessions AttendanceSession[]
+  leaveTypes         LeaveType[]
+  auditLogs          AuditEvent[]
 }
 
 model Campus {
@@ -293,8 +334,6 @@ model AcademicYear {
   applications   AdmissionApplication[]
   feeStructures  FeeStructure[]
   feeDemands     FeeDemand[]
-
-  @@unique([schoolId, name])
 }
 
 model Term {
@@ -320,6 +359,8 @@ model Department {
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  employees Employee[]
 
   @@unique([schoolId, name])
 }
@@ -362,6 +403,7 @@ model Section {
 
   enrollments   Enrollment[]
   feeStructures FeeStructure[]
+  attendanceSessions AttendanceSession[]
 
   @@unique([classId, name])
 }
@@ -451,6 +493,30 @@ model SchoolSetting {
   @@unique([schoolId, category, key])
 }
 
+model Employee {
+  id             String      @id @default(uuid())
+  employeeId     String      @unique
+  firstName      String
+  lastName       String
+  email          String?     @unique
+  phone          String?     @unique
+  dateOfJoin     DateTime
+  designation    String?
+  departmentId   String
+  department     Department  @relation(fields: [departmentId], references: [id])
+  schoolId       String
+  school         School      @relation(fields: [schoolId], references: [id])
+  userId         String?     @unique
+  user           User?       @relation(fields: [userId], references: [id])
+  isActive       Boolean     @default(true)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  attendanceRecords EmployeeAttendanceRecord[]
+  leaveRequests     LeaveRequest[]
+  leaveBalances     LeaveBalance[]
+}
+
 model Student {
   id              String        @id @default(uuid())
   admissionNumber String        @unique
@@ -487,6 +553,8 @@ model Student {
   feeDemands     FeeDemand[]
   payments       Payment[]
   concessions    FeeConcession[]
+  attendanceRecords StudentAttendanceRecord[]
+  leaveRequests     LeaveRequest[]
   auditLogs      AuditEvent[]
 }
 
@@ -1091,6 +1159,153 @@ model Budget {
   updatedAt      DateTime   @updatedAt
 }
 
+// Phase 7: Attendance & Leave Models
+
+model AttendancePolicy {
+  id                 String         @id @default(uuid())
+  name               String
+  role               String         // STUDENT, EMPLOYEE
+  mode               AttendanceMode @default(DAILY)
+  lateThresholdMins  Int?           @default(15)
+  halfDayThresholdHrs Float?         @default(4.0)
+  requireApproval    Boolean        @default(false)
+  schoolId           String
+  school             School         @relation(fields: [schoolId], references: [id])
+  isActive           Boolean        @default(true)
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+}
+
+model AttendanceSession {
+  id             String                  @id @default(uuid())
+  date           DateTime
+  type           String                  // DAILY, PERIOD
+  classId        String?
+  sectionId      String?
+  section        Section?                @relation(fields: [sectionId], references: [id])
+  status         AttendanceSessionStatus @default(OPEN)
+  createdById    String
+  schoolId       String
+  school         School                  @relation(fields: [schoolId], references: [id])
+  academicYearId String
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+
+  studentRecords StudentAttendanceRecord[]
+}
+
+model StudentAttendanceRecord {
+  id             String           @id @default(uuid())
+  sessionId      String
+  session        AttendanceSession @relation(fields: [sessionId], references: [id])
+  studentId      String
+  student        Student          @relation(fields: [studentId], references: [id])
+  status         AttendanceStatus @default(PRESENT)
+  checkInTime    DateTime?
+  checkOutTime   DateTime?
+  remarks        String?
+  markedById     String
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  correction     AttendanceCorrection?
+
+  @@unique([sessionId, studentId])
+}
+
+model EmployeeAttendanceRecord {
+  id             String           @id @default(uuid())
+  date           DateTime
+  employeeId     String
+  employee       Employee         @relation(fields: [employeeId], references: [id])
+  status         AttendanceStatus @default(PRESENT)
+  checkInTime    DateTime?
+  checkOutTime   DateTime?
+  remarks        String?
+  schoolId       String
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@unique([date, employeeId])
+}
+
+model AttendanceCorrection {
+  id               String           @id @default(uuid())
+  studentRecordId  String           @unique
+  studentRecord    StudentAttendanceRecord @relation(fields: [studentRecordId], references: [id])
+  originalStatus   AttendanceStatus
+  requestedStatus  AttendanceStatus
+  reason           String
+  requestedById    String
+  reviewedById     String?
+  status           CorrectionStatus @default(PENDING)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+}
+
+model LeaveType {
+  id           String   @id @default(uuid())
+  name         String   // Casual, Sick, etc.
+  code         String?
+  description  String?
+  schoolId     String
+  school       School   @relation(fields: [schoolId], references: [id])
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  leaveRequests LeaveRequest[]
+  leaveBalances LeaveBalance[]
+
+  @@unique([schoolId, name])
+}
+
+model LeaveBalance {
+  id           String    @id @default(uuid())
+  employeeId   String
+  employee     Employee  @relation(fields: [employeeId], references: [id])
+  leaveTypeId  String
+  leaveType    LeaveType @relation(fields: [leaveTypeId], references: [id])
+  allocated    Float
+  used         Float     @default(0)
+  pending      Float     @default(0)
+  academicYearId String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@unique([employeeId, leaveTypeId, academicYearId])
+}
+
+model LeaveRequest {
+  id             String       @id @default(uuid())
+  employeeId     String?
+  employee       Employee?    @relation(fields: [employeeId], references: [id])
+  studentId      String?
+  student        Student?     @relation(fields: [studentId], references: [id])
+  leaveTypeId    String
+  leaveType      LeaveType    @relation(fields: [leaveTypeId], references: [id])
+  startDate      DateTime
+  endDate        DateTime
+  days           Float
+  reason         String?
+  status         LeaveStatus  @default(SUBMITTED)
+  reviewedById   String?
+  remarks        String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  transactions   LeaveTransaction[]
+}
+
+model LeaveTransaction {
+  id             String       @id @default(uuid())
+  leaveRequestId String
+  leaveRequest   LeaveRequest @relation(fields: [leaveRequestId], references: [id])
+  date           DateTime
+  type           String       // FULL, HALF_MORNING, HALF_AFTERNOON
+  createdAt      DateTime     @default(now())
+}
+
 model User {
   id             String       @id @default(uuid())
   email          String       @unique
@@ -1110,6 +1325,7 @@ model User {
   sessions       Session[]
   auditLogs      AuditEvent[]
   guardian       Guardian?
+  employee       Employee?
 
   assignedEnquiries AdmissionEnquiry[]
   followUps         AdmissionFollowUp[]

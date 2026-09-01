@@ -297,11 +297,182 @@ class TeacherShell extends StatelessWidget {
         NavigationDestination(icon: Icon(Icons.menu), label: 'More'),
       ],
       pages: [
-        Center(child: Text('Teacher Dashboard')),
-        Center(child: Text('Attendance Management')),
+        const TeacherDashboard(),
+        const AttendanceMarking(),
         Center(child: Text('Homework Assignments')),
         Center(child: Text('More Options')),
       ],
+    );
+  }
+}
+
+class TeacherDashboard extends StatelessWidget {
+  const TeacherDashboard({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        const Text('Today\'s Overview', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.navyColor)),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: _QuickStat(
+                label: 'Present',
+                value: '38/42',
+                icon: Icons.check_circle_outline,
+                color: Colors.green,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _QuickStat(
+                label: 'Period 3',
+                value: 'Mathematics',
+                icon: Icons.schedule,
+                color: AppTheme.primaryColor,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 32),
+        const Text('Class Schedule', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.navyColor)),
+        const SizedBox(height: 16),
+        const ScheduleItem(time: '09:00 AM', subject: 'Grade 10-A • Mathematics', room: 'Room 302'),
+        const ScheduleItem(time: '10:15 AM', subject: 'Grade 9-B • Physics', room: 'Lab 1'),
+      ],
+    );
+  }
+}
+
+class _QuickStat extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color color;
+
+  const _QuickStat({required this.label, required this.value, required this.icon, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.borderColor),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(height: 12),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          Text(label, style: const TextStyle(fontSize: 11, color: Colors.black38, fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+}
+
+class ScheduleItem extends StatelessWidget {
+  final String time;
+  final String subject;
+  final String room;
+
+  const ScheduleItem({super.key, required this.time, required this.subject, required this.room});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ListTile(
+        leading: Container(
+          width: 4,
+          height: 40,
+          decoration: BoxDecoration(color: AppTheme.primaryColor, borderRadius: BorderRadius.circular(2)),
+        ),
+        title: Text(subject, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+        subtitle: Text('$time • $room', style: const TextStyle(fontSize: 12)),
+        trailing: const Icon(Icons.chevron_right, color: Colors.black12),
+      ),
+    );
+  }
+}
+
+class AttendanceMarking extends StatelessWidget {
+  const AttendanceMarking({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppTheme.borderColor)),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: 'Grade 10-A',
+                      items: const [DropdownMenuItem(value: 'Grade 10-A', child: Text('Grade 10-A', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)))],
+                      onChanged: null,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(minimumSize: const Size(100, 48)),
+                onPressed: () {},
+                child: const Text('Save'),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: ListView.builder(
+            itemCount: 10,
+            itemBuilder: (context, i) => ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              leading: const CircleAvatar(backgroundColor: AppTheme.backgroundColor, child: Text('AJ', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold))),
+              title: const Text('Student Name', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              subtitle: const Text('Roll: 10-A-01', style: TextStyle(fontSize: 12)),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _StatusBtn(icon: Icons.check, color: Colors.green, isActive: i % 3 == 0),
+                  const SizedBox(width: 8),
+                  _StatusBtn(icon: Icons.close, color: Colors.red, isActive: i % 3 == 1),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _StatusBtn extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final bool isActive;
+  const _StatusBtn({required this.icon, required this.color, required this.isActive});
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: isActive ? color : Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: isActive ? color : AppTheme.borderColor),
+        boxShadow: isActive ? [BoxShadow(color: color.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))] : null,
+      ),
+      child: Icon(icon, size: 16, color: isActive ? Colors.white : Colors.black26),
     );
   }
 }

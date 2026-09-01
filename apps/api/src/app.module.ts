@@ -13,6 +13,8 @@ import { GuardiansModule } from './modules/guardians/guardians.module';
 import { AdmissionsModule } from './modules/admissions/admissions.module';
 import { FinanceModule } from './modules/finance/finance.module';
 import { AccountingModule } from './modules/accounting/accounting.module';
+import { AttendanceModule } from './modules/attendance/attendance.module';
+import { LeaveModule } from './modules/leave/leave.module';
 
 @Module({
   imports: [
@@ -32,6 +34,8 @@ import { AccountingModule } from './modules/accounting/accounting.module';
     AdmissionsModule,
     FinanceModule,
     AccountingModule,
+    AttendanceModule,
+    LeaveModule,
   ],
 })
 export class AppModule {}
