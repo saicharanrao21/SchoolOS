@@ -16,7 +16,10 @@ import {
   BookOpen,
   Layers,
   Home,
-  Briefcase
+  Briefcase,
+  UserPlus,
+  FileText,
+  Mail
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -27,6 +30,15 @@ function cn(...inputs: ClassValue[]) {
 
 const navItems = [
   { label: 'Dashboard', icon: LayoutDashboard, href: '/management/dashboard' },
+  {
+    label: 'Admissions',
+    icon: UserPlus,
+    children: [
+      { label: 'Dashboard', href: '/management/admissions/dashboard', icon: LayoutDashboard },
+      { label: 'Leads & Enquiries', href: '/management/admissions/enquiries', icon: Mail },
+      { label: 'Applications', href: '/management/admissions/applications', icon: FileText },
+    ]
+  },
   { label: 'Students', icon: Users, href: '/management/students' },
   {
     label: 'Master Data',

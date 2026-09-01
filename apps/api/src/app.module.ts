@@ -10,6 +10,7 @@ import { MasterDataModule } from './modules/master-data/master-data.module';
 import { AcademicsModule } from './modules/academics/academics.module';
 import { StudentsModule } from './modules/students/students.module';
 import { GuardiansModule } from './modules/guardians/guardians.module';
+import { AdmissionsModule } from './modules/admissions/admissions.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { GuardiansModule } from './modules/guardians/guardians.module';
     AcademicsModule,
     StudentsModule,
     GuardiansModule,
+    AdmissionsModule,
   ],
 })
 export class AppModule {}

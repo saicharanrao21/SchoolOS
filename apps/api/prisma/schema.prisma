@@ -46,6 +46,72 @@ enum RelationshipType {
   OTHER
 }
 
+enum AdmissionStatus {
+  LEAD
+  ENQUIRY
+  FOLLOW_UP
+  APPLICATION
+  DOCUMENT_COLLECTION
+  VERIFICATION
+  ASSESSMENT_PENDING
+  INTERVIEW_PENDING
+  DECISION_PENDING
+  APPROVED
+  WAITLISTED
+  REJECTED
+  OFFER_EXTENDED
+  OFFER_ACCEPTED
+  OFFER_DECLINED
+  OFFER_EXPIRED
+  WITHDRAWN
+  ENROLLED
+}
+
+enum LeadSource {
+  WEBSITE
+  WALK_IN
+  PHONE
+  WHATSAPP
+  REFERRAL
+  ADVERTISEMENT
+  SOCIAL_MEDIA
+  EXISTING_PARENT
+  EVENT
+  OTHER
+}
+
+enum FollowUpMethod {
+  CALL
+  WHATSAPP
+  SMS
+  EMAIL
+  IN_PERSON
+  OTHER
+}
+
+enum FollowUpOutcome {
+  INTERESTED
+  NOT_INTERESTED
+  CALL_BACK_LATER
+  WRONG_NUMBER
+  NO_RESPONSE
+  CONVERTED
+}
+
+enum AdmissionDocumentStatus {
+  PENDING
+  SUBMITTED
+  VERIFIED
+  REJECTED
+}
+
+enum InterviewStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
 model Organization {
   id          String   @id @default(uuid())
   name        String
@@ -101,6 +167,8 @@ model School {
   houses         House[]
   settings       SchoolSetting[]
   students       Student[]
+  enquiries      AdmissionEnquiry[]
+  applications   AdmissionApplication[]
   auditLogs      AuditEvent[]
 }
 
@@ -120,6 +188,7 @@ model Campus {
 
   locations   Location[]
   enrollments Enrollment[]
+  applications AdmissionApplication[]
   auditLogs   AuditEvent[]
 }
 
@@ -139,6 +208,7 @@ model AcademicYear {
   classes        Class[]
   calendarEvents CalendarEvent[]
   enrollments    Enrollment[]
+  applications   AdmissionApplication[]
 
   @@unique([schoolId, name])
 }
@@ -186,6 +256,7 @@ model Class {
   sections    Section[]
   subjects    ClassSubject[]
   enrollments Enrollment[]
+  applications AdmissionApplication[]
 
   @@unique([schoolId, name, academicYearId])
 }
@@ -324,6 +395,7 @@ model Student {
   documents      StudentDocument[]
   transfers      StudentTransfer[]
   withdrawals    StudentWithdrawal[]
+  applications   AdmissionApplication[]
   auditLogs      AuditEvent[]
 }
 
@@ -421,6 +493,156 @@ model StudentWithdrawal {
   createdAt        DateTime @default(now())
 }
 
+model AdmissionEnquiry {
+  id              String          @id @default(uuid())
+  enquiryNumber   String          @unique
+  firstName       String
+  lastName        String
+  email           String?
+  phone           String
+  dateOfBirth     DateTime?
+  gender          String?
+  interestedClassId String?
+  academicYearId  String?
+  campusId        String?
+  source          LeadSource      @default(OTHER)
+  status          AdmissionStatus @default(ENQUIRY)
+  assignedToId    String?
+  assignedTo      User?           @relation(fields: [assignedToId], references: [id])
+  schoolId        String
+  school          School          @relation(fields: [schoolId], references: [id])
+  notes           String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  followUps       AdmissionFollowUp[]
+  applications    AdmissionApplication[]
+}
+
+model AdmissionFollowUp {
+  id              String          @id @default(uuid())
+  enquiryId       String
+  enquiry         AdmissionEnquiry @relation(fields: [enquiryId], references: [id])
+  scheduledDate   DateTime
+  actualDate      DateTime?
+  method          FollowUpMethod
+  purpose         String?
+  notes           String?
+  outcome         FollowUpOutcome?
+  nextFollowUpDate DateTime?
+  status          String          @default("PENDING") // PENDING, COMPLETED
+  staffId         String
+  staff           User            @relation(fields: [staffId], references: [id])
+  createdAt       DateTime        @default(now())
+}
+
+model AdmissionApplication {
+  id                String          @id @default(uuid())
+  applicationNumber String          @unique
+  enquiryId         String?
+  enquiry           AdmissionEnquiry? @relation(fields: [enquiryId], references: [id])
+  firstName         String
+  middleName        String?
+  lastName          String
+  dateOfBirth       DateTime
+  gender            String
+  contactEmail      String?
+  contactPhone      String
+  address           String?
+
+  schoolId          String
+  school            School          @relation(fields: [schoolId], references: [id])
+  academicYearId    String
+  academicYear      AcademicYear    @relation(fields: [academicYearId], references: [id])
+  classId           String
+  class             Class           @relation(fields: [classId], references: [id])
+  campusId          String
+  campus            Campus          @relation(fields: [campusId], references: [id])
+
+  status            AdmissionStatus @default(APPLICATION)
+  assignedToId      String?
+  assignedTo        User?           @relation(fields: [assignedToId], references: [id])
+
+  previousSchool    String?
+  previousGrade     String?
+
+  documents         AdmissionApplicationDocument[]
+  assessments       AdmissionAssessment[]
+  interviews        AdmissionInterview[]
+  decision          AdmissionDecision?
+  offer             AdmissionOffer?
+
+  studentId         String?         @unique // Linked when converted to student
+  student           Student?        @relation(fields: [studentId], references: [id])
+
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+}
+
+model AdmissionApplicationDocument {
+  id                String                 @id @default(uuid())
+  applicationId     String
+  application       AdmissionApplication   @relation(fields: [applicationId], references: [id])
+  name              String
+  type              String
+  fileReference     String
+  status            AdmissionDocumentStatus @default(PENDING)
+  rejectionReason   String?
+  verifiedById      String?
+  verifiedAt        DateTime?
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+}
+
+model AdmissionAssessment {
+  id                String               @id @default(uuid())
+  applicationId     String
+  application       AdmissionApplication @relation(fields: [applicationId], references: [id])
+  type              String               // Entrance Test, etc.
+  date              DateTime
+  evaluatorId       String?
+  score             String?
+  result            String?              // Pass, Fail, etc.
+  notes             String?
+  status            String               @default("PENDING")
+  createdAt         DateTime             @default(now())
+}
+
+model AdmissionInterview {
+  id                String               @id @default(uuid())
+  applicationId     String
+  application       AdmissionApplication @relation(fields: [applicationId], references: [id])
+  interviewerId     String
+  date              DateTime
+  location          String?
+  status            InterviewStatus      @default(SCHEDULED)
+  notes             String?
+  outcome           String?
+  createdAt         DateTime             @default(now())
+}
+
+model AdmissionDecision {
+  id                String               @id @default(uuid())
+  applicationId     String               @unique
+  application       AdmissionApplication @relation(fields: [applicationId], references: [id])
+  decision          AdmissionStatus      // APPROVED, REJECTED, WAITLISTED
+  reason            String?
+  decidedById       String
+  date              DateTime             @default(now())
+  notes             String?
+}
+
+model AdmissionOffer {
+  id                String               @id @default(uuid())
+  applicationId     String               @unique
+  application       AdmissionApplication @relation(fields: [applicationId], references: [id])
+  offeredDate       DateTime             @default(now())
+  expiryDate        DateTime?
+  conditions        String?
+  status            String               @default("PENDING") // PENDING, ACCEPTED, DECLINED, EXPIRED
+  acceptedDate      DateTime?
+}
+
 model User {
   id             String       @id @default(uuid())
   email          String       @unique
@@ -440,6 +662,10 @@ model User {
   sessions       Session[]
   auditLogs      AuditEvent[]
   guardian       Guardian?
+
+  assignedEnquiries AdmissionEnquiry[]
+  followUps         AdmissionFollowUp[]
+  assignedApplications AdmissionApplication[]
 }
 
 model Role {
