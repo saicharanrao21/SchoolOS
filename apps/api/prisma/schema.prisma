@@ -302,6 +302,36 @@ enum NotificationPriority {
   URGENT
 }
 
+enum VehicleStatus {
+  ACTIVE
+  INACTIVE
+  MAINTENANCE
+  RETIRED
+}
+
+enum RouteDirection {
+  PICKUP
+  DROPOFF
+  BOTH
+}
+
+enum TripStatus {
+  PLANNED
+  STARTED
+  IN_PROGRESS
+  ARRIVED
+  COMPLETED
+  CANCELLED
+  DELAYED
+  EMERGENCY
+}
+
+enum BoardingStatus {
+  BOARDED
+  NOT_BOARDED
+  EXCEPTION
+}
+
 model Organization {
   id          String   @id @default(uuid())
   name        String
@@ -382,6 +412,9 @@ model School {
   notificationTemplates NotificationTemplate[]
   notificationProviders NotificationProvider[]
   announcements      SchoolAnnouncement[]
+  transportPolicies  TransportPolicy[]
+  vehicles           Vehicle[]
+  routes             TransportRoute[]
   auditLogs          AuditEvent[]
 }
 
@@ -434,6 +467,7 @@ model AcademicYear {
   examinations   Examination[]
   results        Result[]
   reportCards    ReportCard[]
+  transportAssignments StudentTransportAssignment[]
 }
 
 model Term {
@@ -654,6 +688,8 @@ model Employee {
   examSchedules   ExamSchedule[] @relation("Invigilator")
   markEntries     MarkEntry[]
   remarkRecords   TeacherRemark[]
+  driverProfile   DriverProfile?
+  trips           TransportTrip[]
 }
 
 model Student {
@@ -700,6 +736,9 @@ model Student {
   results        Result[]
   reportCards    ReportCard[]
   remarks        TeacherRemark[]
+  transportAssignment StudentTransportAssignment?
+  boardingEvents  BoardingEvent[]
+  authorizedPickups AuthorizedPickupPerson[]
   auditLogs      AuditEvent[]
 }
 
@@ -1588,7 +1627,7 @@ model TimetableEntry {
   roomId             String?
   room               Location?        @relation(fields: [roomId], references: [id])
   createdAt          DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+  updatedAt          DateTime         @updatedAt
 }
 
 model Substitution {
@@ -2215,4 +2254,198 @@ model SchoolAnnouncement {
   status         String   @default("DRAFT") // DRAFT, PUBLISHED, ARCHIVED
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+}
+
+// Phase 11: Transport, GPS & Child Safety Models
+
+model TransportPolicy {
+  id                      String   @id @default(uuid())
+  schoolId                String
+  school                  School   @relation(fields: [schoolId], references: [id])
+  pickupVerificationRequired Boolean  @default(true)
+  geofenceRadiusMeters    Int      @default(100)
+  gpsIntervalSeconds      Int      @default(30)
+  lateThresholdMins       Int      @default(15)
+  routeDeviationThresholdMeters Int   @default(500)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+}
+
+model Vehicle {
+  id                 String        @id @default(uuid())
+  vehicleNumber      String        @unique
+  registrationNumber String        @unique
+  type               String        // BUS, VAN, etc.
+  capacity           Int
+  make               String?
+  model              String?
+  year               Int?
+  fuelType           String?
+  status             VehicleStatus @default(ACTIVE)
+  gpsDeviceId        String?
+  schoolId           String
+  school             School        @relation(fields: [schoolId], references: [id])
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  documents          VehicleDocument[]
+  trips              TransportTrip[]
+}
+
+model VehicleDocument {
+  id             String   @id @default(uuid())
+  vehicleId      String
+  vehicle        Vehicle  @relation(fields: [vehicleId], references: [id])
+  type           String   // INSURANCE, FITNESS, PERMIT, POLLUTION
+  documentNumber String?
+  expiryDate     DateTime
+  fileUrl        String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model DriverProfile {
+  id               String   @id @default(uuid())
+  employeeId       String   @unique
+  employee         Employee @relation(fields: [employeeId], references: [id])
+  licenseNumber    String   @unique
+  licenseClass     String?
+  licenseExpiry    DateTime
+  verificationStatus String @default("PENDING")
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model TransportRoute {
+  id             String         @id @default(uuid())
+  name           String
+  code           String?
+  direction      RouteDirection @default(BOTH)
+  schoolId       String
+  school         School         @relation(fields: [schoolId], references: [id])
+  isActive       Boolean        @default(true)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  stops          TransportStop[]
+  assignments    StudentTransportAssignment[]
+  trips          TransportTrip[]
+
+  @@unique([schoolId, code])
+}
+
+model TransportStop {
+  id               String         @id @default(uuid())
+  routeId          String
+  route            TransportRoute @relation(fields: [routeId], references: [id])
+  name             String
+  sequence         Int
+  latitude         Float
+  longitude        Float
+  address          String?
+  plannedTime      String?        // HH:mm
+  pickupEnabled    Boolean        @default(true)
+  dropoffEnabled   Boolean        @default(true)
+  isActive         Boolean        @default(true)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  assignments      StudentTransportAssignment[]
+  trips            TransportTrip[] @relation("StopTrips")
+}
+
+model StudentTransportAssignment {
+  id               String         @id @default(uuid())
+  studentId        String         @unique
+  student          Student        @relation(fields: [studentId], references: [id])
+  academicYearId   String
+  academicYear     AcademicYear   @relation(fields: [academicYearId], references: [id])
+  routeId          String
+  route            TransportRoute @relation(fields: [routeId], references: [id])
+  stopId           String
+  stop             TransportStop  @relation(fields: [stopId], references: [id])
+  pickup           Boolean        @default(true)
+  dropoff          Boolean        @default(true)
+  status           String         @default("ACTIVE")
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+}
+
+model AuthorizedPickupPerson {
+  id               String   @id @default(uuid())
+  studentId        String
+  student          Student  @relation(fields: [studentId], references: [id])
+  name             String
+  relationship     String
+  contact          String
+  photoUrl         String?
+  verificationCode String?  // OTP foundation
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model TransportTrip {
+  id             String         @id @default(uuid())
+  routeId        String
+  route          TransportRoute @relation(fields: [routeId], references: [id])
+  vehicleId      String
+  vehicle        Vehicle        @relation(fields: [vehicleId], references: [id])
+  driverId       String
+  driver         Employee       @relation(fields: [driverId], references: [id])
+  conductorId    String?
+  date           DateTime
+  direction      RouteDirection
+  status         TripStatus     @default(PLANNED)
+  startedAt      DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  boardingEvents BoardingEvent[]
+  locations      VehicleLocation[]
+  incidents      TransportSafetyIncident[]
+  stops          TransportStop[] @relation("StopTrips")
+}
+
+model BoardingEvent {
+  id               String         @id @default(uuid())
+  tripId           String
+  trip             TransportTrip  @relation(fields: [tripId], references: [id])
+  studentId        String
+  student          Student        @relation(fields: [studentId], references: [id])
+  stopId           String
+  type             String         // BOARDING, DEBOARDING
+  status           BoardingStatus @default(BOARDED)
+  timestamp        DateTime       @default(now())
+  latitude         Float?
+  longitude        Float?
+  verifiedById     String?
+  createdAt        DateTime       @default(now())
+}
+
+model VehicleLocation {
+  id             String        @id @default(uuid())
+  tripId         String
+  trip           TransportTrip @relation(fields: [tripId], references: [id])
+  latitude       Float
+  longitude      Float
+  speed          Float?
+  heading        Float?
+  timestamp      DateTime      @default(now())
+}
+
+model TransportSafetyIncident {
+  id             String        @id @default(uuid())
+  tripId         String
+  trip           TransportTrip @relation(fields: [tripId], references: [id])
+  type           String        // DEVIATION, OVER_SPEEDING, SOS, GPS_OFFLINE
+  severity       String        @default("MEDIUM") // LOW, MEDIUM, HIGH, CRITICAL
+  description    String?
+  latitude       Float?
+  longitude      Float?
+  status         String        @default("OPEN")
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 }

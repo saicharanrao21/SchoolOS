@@ -118,15 +118,73 @@ class ParentShell extends StatelessWidget {
       destinations: const [
         NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
         NavigationDestination(icon: Icon(Icons.school_outlined), selectedIcon: Icon(Icons.school), label: 'Academics'),
-        NavigationDestination(icon: Icon(Icons.assignment_turned_in_outlined), selectedIcon: Icon(Icons.assignment_turned_in), label: 'Results'),
+        NavigationDestination(icon: Icon(Icons.directions_bus_outlined), selectedIcon: Icon(Icons.directions_bus), label: 'Transport'),
         NavigationDestination(icon: Icon(Icons.payments_outlined), selectedIcon: Icon(Icons.payments), label: 'Payments'),
       ],
       pages: [
         const ParentHome(),
         const ChildAcademics(),
-        const ChildResults(),
+        const ChildTransport(),
         const ParentPayments(),
       ],
+    );
+  }
+}
+
+class ChildTransport extends StatelessWidget {
+  const ChildTransport({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        const Text('Track Child Transport', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.navyColor)),
+        const SizedBox(height: 20),
+        Container(
+          height: 200,
+          decoration: BoxDecoration(
+            color: Colors.grey[100],
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppTheme.borderColor),
+          ),
+          child: const Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.map_outlined, size: 48, color: Colors.black26),
+                SizedBox(height: 12),
+                Text('Live Tracking Available', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black45)),
+                Text('Vehicle: Bus 04 • On Route', style: TextStyle(fontSize: 12, color: Colors.black38)),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
+        const TransportInfoTile(label: 'Route', value: 'North City Express', icon: Icons.route),
+        const TransportInfoTile(label: 'Assigned Stop', value: 'Central Plaza Main Gate', icon: Icons.location_on),
+        const TransportInfoTile(label: 'Pickup Time', value: '07:45 AM', icon: Icons.access_time),
+        const TransportInfoTile(label: 'Driver', value: 'Mr. Rajesh Kumar', icon: Icons.person),
+      ],
+    );
+  }
+}
+
+class TransportInfoTile extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+
+  const TransportInfoTile({super.key, required this.label, required this.value, required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ListTile(
+        leading: Icon(icon, color: AppTheme.primaryColor, size: 20),
+        title: Text(label, style: const TextStyle(fontSize: 11, color: Colors.black45, fontWeight: FontWeight.bold)),
+        subtitle: Text(value, style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.navyColor, fontSize: 14)),
+      ),
     );
   }
 }
@@ -874,15 +932,69 @@ class DriverShell extends StatelessWidget {
     return const RoleShell(
       title: 'Transport Portal',
       destinations: [
-        NavigationDestination(icon: Icon(Icons.route_outlined), selectedIcon: Icon(Icons.route), label: 'Route'),
-        NavigationDestination(icon: Icon(Icons.people_outline), selectedIcon: Icon(Icons.people), label: 'Students'),
+        NavigationDestination(icon: Icon(Icons.route_outlined), selectedIcon: Icon(Icons.route), label: 'My Trip'),
+        NavigationDestination(icon: Icon(Icons.people_outline), selectedIcon: Icon(Icons.people), label: 'Manifest'),
         NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profile'),
       ],
       pages: [
-        Center(child: Text('Active Route Map')),
+        const DriverTripAction(),
         Center(child: Text('Student Manifest')),
         Center(child: Text('Driver Profile')),
       ],
+    );
+  }
+}
+
+class DriverTripAction extends StatelessWidget {
+  const DriverTripAction({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text('Assigned Trip', style: TextStyle(color: Colors.black54)),
+          const Text('North City Express', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.navyColor)),
+          const Text('Direction: PICKUP • 01 Sept', style: TextStyle(fontSize: 14, color: Colors.black38)),
+          const Spacer(),
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.blue[50],
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: Colors.blue[100]!),
+            ),
+            child: Column(
+              children: [
+                const Icon(Icons.gps_fixed, size: 48, color: Colors.blue),
+                const SizedBox(height: 16),
+                const Text('GPS Tracking Ready', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
+                const Text('Location updates will start with the trip.', style: TextStyle(fontSize: 12, color: Colors.blueGrey)),
+              ],
+            ),
+          ),
+          const SizedBox(height: 32),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              backgroundColor: Colors.green,
+            ),
+            onPressed: () {},
+            child: const Text('START TRIP', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          ),
+          const SizedBox(height: 16),
+          OutlinedButton(
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              side: const BorderSide(color: Colors.red),
+              foregroundColor: Colors.red,
+            ),
+            onPressed: () {},
+            child: const Text('EMERGENCY SOS', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
     );
   }
 }

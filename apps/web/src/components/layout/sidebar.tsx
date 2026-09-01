@@ -31,7 +31,10 @@ import {
   Bell,
   Settings2,
   GraduationCap,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Bus,
+  Route,
+  Navigation
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -88,6 +91,16 @@ const navItems = [
       { label: 'Fee Structures', href: '/management/finance/fee-structures', icon: Layers },
       { label: 'Invoices', href: '/management/finance/invoices', icon: FileText },
       { label: 'Collect Fee', href: '/management/finance/collect', icon: Plus },
+    ]
+  },
+  {
+    label: 'Transport',
+    icon: Bus,
+    children: [
+      { label: 'Dashboard', href: '/management/transport/dashboard', icon: LayoutDashboard },
+      { label: 'Routes', href: '/management/transport/routes', icon: Route },
+      { label: 'Vehicles', href: '/management/transport/vehicles', icon: Bus },
+      { label: 'Active Trips', href: '/management/transport/trips', icon: Navigation },
     ]
   },
   {
