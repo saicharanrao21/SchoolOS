@@ -7,60 +7,105 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  PENDING_VERIFICATION
+}
+
+enum AuditSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
 model Organization {
-  id        String   @id @default(uuid())
-  name      String
-  slug      String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  schools   School[]
-  users     User[]
+  id          String   @id @default(uuid())
+  name        String
+  displayName String?
+  code        String?  @unique
+  slug        String   @unique
+  address     String?
+  phone       String?
+  email       String?
+  website     String?
+  timezone    String   @default("UTC")
+  currency    String   @default("USD")
+  locale      String   @default("en-US")
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  schools     School[]
+  users       User[]
+  auditLogs   AuditEvent[]
 }
 
 model School {
   id             String       @id @default(uuid())
   name           String
+  displayName    String?
+  code           String?
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id])
-  campuses       Campus[]
+  isActive       Boolean      @default(true)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
+
+  campuses       Campus[]
+  auditLogs      AuditEvent[]
 }
 
 model Campus {
   id        String   @id @default(uuid())
   name      String
+  code      String?
+  address   String?
   schoolId  String
   school    School   @relation(fields: [schoolId], references: [id])
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
-  updatedAt      DateTime     @updatedAt
+  updatedAt DateTime @updatedAt
+
+  auditLogs AuditEvent[]
 }
 
 model User {
   id             String       @id @default(uuid())
   email          String       @unique
+  phone          String?      @unique
   password       String
-  firstName      String?
-  lastName       String?
+  firstName      String
+  lastName       String
+  displayName    String?
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id])
-  roles          UserRole[]
-  isActive       Boolean      @default(true)
+  status         UserStatus   @default(PENDING_VERIFICATION)
+  lastLoginAt    DateTime?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
+
+  roles          UserRole[]
+  sessions       Session[]
+  auditLogs      AuditEvent[]
 }
 
 model Role {
-  id          String           @id @default(uuid())
-  name        String           @unique
-  permissions RolePermission[]
-  users       UserRole[]
+  id             String           @id @default(uuid())
+  name           String           @unique
+  description    String?
+  organizationId String?          // Null for global system roles
+  permissions    RolePermission[]
+  users          UserRole[]
 }
 
 model Permission {
-  id    String           @id @default(uuid())
-  name  String           @unique
-  roles RolePermission[]
+  id          String           @id @default(uuid())
+  name        String           @unique // e.g., "user.create"
+  description String?
+  roles       RolePermission[]
 }
 
 model UserRole {
@@ -79,4 +124,50 @@ model RolePermission {
   permission   Permission @relation(fields: [permissionId], references: [id])
 
   @@id([roleId, permissionId])
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  userAgent    String?
+  ipAddress    String?
+  isRevoked    Boolean  @default(false)
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  lastActiveAt DateTime @default(now())
+
+  refreshTokens RefreshToken[]
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  sessionId String
+  session   Session  @relation(fields: [sessionId], references: [id])
+  isUsed    Boolean  @default(false)
+  isRevoked Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model AuditEvent {
+  id             String        @id @default(uuid())
+  action         String        // e.g., "login.success", "user.create"
+  resource       String        // e.g., "User", "Organization"
+  resourceId     String?
+  actorId        String?
+  actor          User?         @relation(fields: [actorId], references: [id])
+  organizationId String
+  organization   Organization  @relation(fields: [organizationId], references: [id])
+  schoolId       String?
+  school         School?       @relation(fields: [schoolId], references: [id])
+  campusId       String?
+  campus         Campus?       @relation(fields: [campusId], references: [id])
+  metadata       Json?         // Safe context data
+  severity       AuditSeverity @default(LOW)
+  ipAddress      String?
+  userAgent      String?
+  correlationId  String?
+  createdAt      DateTime      @default(now())
 }
