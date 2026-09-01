@@ -27,6 +27,7 @@ function cn(...inputs: ClassValue[]) {
 
 const navItems = [
   { label: 'Dashboard', icon: LayoutDashboard, href: '/management/dashboard' },
+  { label: 'Students', icon: Users, href: '/management/students' },
   {
     label: 'Master Data',
     icon: ShieldCheck,

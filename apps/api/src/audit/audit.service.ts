@@ -15,6 +15,7 @@ export interface AuditLogOptions {
   ipAddress?: string;
   userAgent?: string;
   correlationId?: string;
+  studentId?: string;
 }
 
 @Injectable()
@@ -36,6 +37,7 @@ export class AuditService {
         ipAddress: options.ipAddress,
         userAgent: options.userAgent,
         correlationId: options.correlationId,
+        studentId: options.studentId,
       },
     });
   }

@@ -24,9 +24,10 @@ class _RoleShellState extends State<RoleShell> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title, style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.navyColor)),
+        title: Text(widget.title, style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.navyColor, fontSize: 20)),
         backgroundColor: Colors.white,
         elevation: 0,
+        centerTitle: false,
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_none_rounded, color: AppTheme.navyColor),
@@ -35,17 +36,30 @@ class _RoleShellState extends State<RoleShell> {
           const Padding(
             padding: EdgeInsets.only(right: 16.0),
             child: CircleAvatar(
+              radius: 18,
               backgroundColor: AppTheme.primaryColor,
-              child: Text('JD', style: TextStyle(color: Colors.white, fontSize: 14)),
+              child: Text('JD', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
             ),
           ),
         ],
       ),
-      body: widget.pages[_selectedIndex],
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: (index) => setState(() => _selectedIndex = index),
-        destinations: widget.destinations,
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        child: widget.pages[_selectedIndex],
+      ),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5)),
+          ],
+        ),
+        child: NavigationBar(
+          height: 70,
+          elevation: 0,
+          selectedIndex: _selectedIndex,
+          onDestinationSelected: (index) => setState(() => _selectedIndex = index),
+          destinations: widget.destinations,
+        ),
       ),
     );
   }
@@ -55,19 +69,124 @@ class ParentShell extends StatelessWidget {
   const ParentShell({super.key});
   @override
   Widget build(BuildContext context) {
-    return const RoleShell(
+    return RoleShell(
       title: 'Parent Portal',
-      destinations: [
+      destinations: const [
         NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
         NavigationDestination(icon: Icon(Icons.child_care_outlined), selectedIcon: Icon(Icons.child_care), label: 'Children'),
         NavigationDestination(icon: Icon(Icons.payments_outlined), selectedIcon: Icon(Icons.payments), label: 'Payments'),
         NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profile'),
       ],
       pages: [
-        Center(child: Text('Parent Home')),
-        Center(child: Text('Children List')),
-        Center(child: Text('Payment History')),
-        Center(child: Text('Profile Settings')),
+        const ParentHome(),
+        const ChildrenList(),
+        const Center(child: Text('Payment History')),
+        const Center(child: Text('Profile Settings')),
+      ],
+    );
+  }
+}
+
+class ParentHome extends StatelessWidget {
+  const ParentHome({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Welcome back,', style: TextStyle(color: Colors.black54)),
+          const Text('Robert Johnson', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.navyColor)),
+          const SizedBox(height: 24),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(colors: [AppTheme.primaryColor, Color(0xFF60A5FA)]),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [BoxShadow(color: AppTheme.primaryColor.withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 8))],
+            ),
+            child: Row(
+              children: [
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Next Event', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
+                      SizedBox(height: 4),
+                      Text('Parent-Teacher Meeting', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                      SizedBox(height: 4),
+                      Text('Tomorrow, 10:00 AM', style: TextStyle(color: Colors.white70, fontSize: 13)),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(15)),
+                  child: const Icon(Icons.calendar_today, color: Colors.white),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 32),
+          const Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('My Children', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.navyColor)),
+              Text('View All', style: TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.bold, fontSize: 14)),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const ChildCard(name: 'Alice Johnson', grade: 'Grade 10-A', id: 'GA260001'),
+          const ChildCard(name: 'Ben Johnson', grade: 'Grade 6-B', id: 'GA260124'),
+        ],
+      ),
+    );
+  }
+}
+
+class ChildCard extends StatelessWidget {
+  final String name;
+  final String grade;
+  final String id;
+
+  const ChildCard({super.key, required this.name, required this.grade, required this.id});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(16),
+        leading: CircleAvatar(
+          radius: 25,
+          backgroundColor: AppTheme.secondaryColor.withOpacity(0.1),
+          child: Text(name[0], style: const TextStyle(color: AppTheme.secondaryColor, fontWeight: FontWeight.bold)),
+        ),
+        title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.navyColor)),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 4),
+            Text(grade, style: const TextStyle(fontSize: 13)),
+            Text('ID: $id', style: const TextStyle(fontSize: 11, color: Colors.black38)),
+          ],
+        ),
+        trailing: const Icon(Icons.chevron_right_rounded, color: Colors.black26),
+      ),
+    );
+  }
+}
+
+class ChildrenList extends StatelessWidget {
+  const ChildrenList({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: const [
+        ChildCard(name: 'Alice Johnson', grade: 'Grade 10-A', id: 'GA260001'),
+        ChildCard(name: 'Ben Johnson', grade: 'Grade 6-B', id: 'GA260124'),
       ],
     );
   }

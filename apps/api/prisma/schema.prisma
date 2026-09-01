@@ -14,6 +14,17 @@ enum UserStatus {
   PENDING_VERIFICATION
 }
 
+enum StudentStatus {
+  APPLICANT
+  ADMITTED
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  TRANSFERRED
+  WITHDRAWN
+  ALUMNI
+}
+
 enum AuditSeverity {
   LOW
   MEDIUM
@@ -26,6 +37,13 @@ enum AcademicYearStatus {
   ACTIVE
   CLOSED
   ARCHIVED
+}
+
+enum RelationshipType {
+  FATHER
+  MOTHER
+  GUARDIAN
+  OTHER
 }
 
 model Organization {
@@ -82,6 +100,7 @@ model School {
   subjects       Subject[]
   houses         House[]
   settings       SchoolSetting[]
+  students       Student[]
   auditLogs      AuditEvent[]
 }
 
@@ -99,8 +118,9 @@ model Campus {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  locations Location[]
-  auditLogs AuditEvent[]
+  locations   Location[]
+  enrollments Enrollment[]
+  auditLogs   AuditEvent[]
 }
 
 model AcademicYear {
@@ -118,6 +138,7 @@ model AcademicYear {
   terms          Term[]
   classes        Class[]
   calendarEvents CalendarEvent[]
+  enrollments    Enrollment[]
 
   @@unique([schoolId, name])
 }
@@ -162,8 +183,9 @@ model Class {
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
-  sections       Section[]
-  subjects       ClassSubject[]
+  sections    Section[]
+  subjects    ClassSubject[]
+  enrollments Enrollment[]
 
   @@unique([schoolId, name, academicYearId])
 }
@@ -181,6 +203,8 @@ model Section {
   isActive       Boolean  @default(true)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+
+  enrollments Enrollment[]
 
   @@unique([classId, name])
 }
@@ -237,6 +261,8 @@ model House {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  students  Student[]
+
   @@unique([schoolId, name])
 }
 
@@ -268,6 +294,133 @@ model SchoolSetting {
   @@unique([schoolId, category, key])
 }
 
+model Student {
+  id              String        @id @default(uuid())
+  admissionNumber String        @unique
+  firstName       String
+  middleName      String?
+  lastName        String
+  displayName     String?
+  dateOfBirth     DateTime
+  gender          String?
+  profilePhoto    String?
+  admissionDate   DateTime      @default(now())
+  status          StudentStatus @default(APPLICANT)
+  nationality     String?
+  bloodGroup      String?
+  religion        String?
+  category        String?       // e.g. General, OBC
+  schoolId        String
+  school          School        @relation(fields: [schoolId], references: [id])
+  houseId         String?
+  house           House?        @relation(fields: [houseId], references: [id])
+  metadata        Json?
+  isActive        Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  enrollments    Enrollment[]
+  guardians      GuardianStudent[]
+  documents      StudentDocument[]
+  transfers      StudentTransfer[]
+  withdrawals    StudentWithdrawal[]
+  auditLogs      AuditEvent[]
+}
+
+model Guardian {
+  id          String   @id @default(uuid())
+  firstName   String
+  lastName    String
+  email       String?  @unique
+  phone       String   @unique
+  occupation  String?
+  address     String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  students    GuardianStudent[]
+  userId      String?  @unique
+  user        User?    @relation(fields: [userId], references: [id])
+}
+
+model GuardianStudent {
+  studentId        String
+  guardianId       String
+  relationship     RelationshipType
+  isPrimary        Boolean          @default(false)
+  isEmergency      Boolean          @default(false)
+  hasPortalAccess  Boolean          @default(false)
+  isAuthorizedPickup Boolean        @default(true)
+  student          Student          @relation(fields: [studentId], references: [id])
+  guardian         Guardian         @relation(fields: [guardianId], references: [id])
+
+  @@id([studentId, guardianId])
+}
+
+model Enrollment {
+  id             String       @id @default(uuid())
+  studentId      String
+  student        Student      @relation(fields: [studentId], references: [id])
+  schoolId       String
+  academicYearId String
+  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id])
+  classId        String
+  class          Class        @relation(fields: [classId], references: [id])
+  sectionId      String
+  section        Section      @relation(fields: [sectionId], references: [id])
+  campusId       String
+  campus         Campus       @relation(fields: [campusId], references: [id])
+  rollNumber     String?
+  enrollmentDate DateTime     @default(now())
+  status         String       @default("ACTIVE") // ACTIVE, COMPLETED, DROPPED
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([academicYearId, studentId])
+  @@unique([academicYearId, sectionId, rollNumber])
+}
+
+model StudentDocument {
+  id               String   @id @default(uuid())
+  name             String
+  type             String   // e.g. Birth Certificate, Photo
+  fileReference    String
+  verificationStatus String @default("PENDING") // PENDING, VERIFIED, REJECTED
+  studentId        String
+  student          Student  @relation(fields: [studentId], references: [id])
+  uploadedById     String?
+  expiryDate       DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model StudentTransfer {
+  id               String   @id @default(uuid())
+  studentId        String
+  student          Student  @relation(fields: [studentId], references: [id])
+  fromSchoolId     String
+  toSchoolId       String?
+  fromCampusId     String
+  toCampusId       String?
+  transferDate     DateTime @default(now())
+  reason           String?
+  authorizedById   String
+  notes            String?
+  createdAt        DateTime @default(now())
+}
+
+model StudentWithdrawal {
+  id               String   @id @default(uuid())
+  studentId        String
+  student          Student  @relation(fields: [studentId], references: [id])
+  withdrawalDate   DateTime @default(now())
+  reason           String?
+  authorizedById   String
+  notes            String?
+  createdAt        DateTime @default(now())
+}
+
 model User {
   id             String       @id @default(uuid())
   email          String       @unique
@@ -286,6 +439,7 @@ model User {
   roles          UserRole[]
   sessions       Session[]
   auditLogs      AuditEvent[]
+  guardian       Guardian?
 }
 
 model Role {
@@ -366,4 +520,7 @@ model AuditEvent {
   userAgent      String?
   correlationId  String?
   createdAt      DateTime      @default(now())
+
+  student        Student?      @relation(fields: [studentId], references: [id])
+  studentId      String?
 }
