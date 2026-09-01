@@ -6,6 +6,8 @@ import { AuthModule } from './auth/auth.module';
 import { TenancyModule } from './tenancy/tenancy.module';
 import { AuditModule } from './audit/audit.module';
 import { IdentityModule } from './modules/identity/identity.module';
+import { MasterDataModule } from './modules/master-data/master-data.module';
+import { AcademicsModule } from './modules/academics/academics.module';
 
 @Module({
   imports: [
@@ -18,6 +20,8 @@ import { IdentityModule } from './modules/identity/identity.module';
     TenancyModule,
     AuditModule,
     IdentityModule,
+    MasterDataModule,
+    AcademicsModule,
   ],
 })
 export class AppModule {}

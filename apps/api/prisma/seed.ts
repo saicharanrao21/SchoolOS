@@ -1,4 +1,4 @@
-import { PrismaClient, UserStatus } from '@prisma/client';
+import { PrismaClient, UserStatus, AcademicYearStatus } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -21,9 +21,13 @@ async function main() {
   const permissions = [
     'organization.read', 'organization.create', 'organization.update', 'organization.archive',
     'school.read', 'school.create', 'school.update', 'school.archive',
+    'campus.read', 'campus.create', 'campus.update', 'campus.archive',
     'user.read', 'user.create', 'user.update', 'user.disable',
     'role.read', 'role.manage',
-    'audit.read'
+    'audit.read',
+    'academic_year.read', 'academic_year.create', 'academic_year.update',
+    'class.read', 'class.create', 'class.update',
+    'department.read', 'department.create', 'location.read', 'location.create'
   ];
 
   for (const p of permissions) {
@@ -72,6 +76,60 @@ async function main() {
       roleId: superAdminRole.id,
     },
   });
+
+  // 6. Create a Demo School
+  const demoSchool = await prisma.school.upsert({
+    where: { id: 'demo-school-id' }, // Just for deterministic seeding
+    update: {},
+    create: {
+      id: 'demo-school-id',
+      name: 'Global Academy',
+      displayName: 'Global Academy High',
+      code: 'GA-01',
+      organizationId: systemOrg.id,
+    },
+  });
+
+  // 7. Create Academic Year
+  const ay = await prisma.academicYear.upsert({
+    where: { schoolId_name: { schoolId: demoSchool.id, name: '2026-27' } },
+    update: {},
+    create: {
+      name: '2026-27',
+      startDate: new Date('2026-08-01'),
+      endDate: new Date('2027-05-31'),
+      status: AcademicYearStatus.ACTIVE,
+      isCurrent: true,
+      schoolId: demoSchool.id,
+    },
+  });
+
+  // 8. Create Classes
+  for (let i = 1; i <= 10; i++) {
+    const cls = await prisma.class.upsert({
+      where: { schoolId_name_academicYearId: { schoolId: demoSchool.id, name: `Grade ${i}`, academicYearId: ay.id } },
+      update: {},
+      create: {
+        name: `Grade ${i}`,
+        sequence: i,
+        schoolId: demoSchool.id,
+        academicYearId: ay.id,
+      },
+    });
+
+    // Create Sections
+    for (const secName of ['A', 'B']) {
+      await prisma.section.upsert({
+        where: { classId_name: { classId: cls.id, name: secName } },
+        update: {},
+        create: {
+          name: secName,
+          classId: cls.id,
+          capacity: 30,
+        },
+      });
+    }
+  }
 
   console.log('Seed completed successfully.');
 }

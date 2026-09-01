@@ -6,6 +6,7 @@ import { RolesGuard } from '../../../auth/guards/roles.guard';
 import { Roles } from '../../../auth/decorators/roles.decorator';
 import { PermissionsGuard } from '../../../auth/guards/permissions.guard';
 import { Permissions } from '../../../auth/decorators/permissions.decorator';
+import { User } from '../../../auth/decorators/user.decorator';
 
 @Controller('organizations')
 @UseGuards(AuthGuard('jwt'), RolesGuard, PermissionsGuard)
@@ -15,8 +16,8 @@ export class OrganizationsController {
   @Post()
   @Roles('SUPER_ADMIN')
   @Permissions('organization.create')
-  create(@Body() createOrganizationDto: Prisma.OrganizationCreateInput) {
-    return this.organizationsService.create(createOrganizationDto);
+  create(@Body() data: Prisma.OrganizationCreateInput, @User('id') actorId: string) {
+    return this.organizationsService.create(data, actorId);
   }
 
   @Get()
@@ -34,14 +35,14 @@ export class OrganizationsController {
 
   @Patch(':id')
   @Permissions('organization.update')
-  update(@Param('id') id: string, @Body() updateOrganizationDto: Prisma.OrganizationUpdateInput) {
-    return this.organizationsService.update(id, updateOrganizationDto);
+  update(@Param('id') id: string, @Body() data: Prisma.OrganizationUpdateInput, @User('id') actorId: string) {
+    return this.organizationsService.update(id, data, actorId);
   }
 
   @Delete(':id')
   @Roles('SUPER_ADMIN')
   @Permissions('organization.archive')
-  remove(@Param('id') id: string) {
-    return this.organizationsService.remove(id);
+  remove(@Param('id') id: string, @User('id') actorId: string) {
+    return this.organizationsService.remove(id, actorId);
   }
 }

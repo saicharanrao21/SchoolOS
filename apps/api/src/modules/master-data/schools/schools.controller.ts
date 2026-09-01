@@ -13,8 +13,8 @@ export class SchoolsController {
 
   @Post()
   @Permissions('school.create')
-  create(@User('org') organizationId: string, @Body() data: any) {
-    return this.schoolsService.create(organizationId, data);
+  create(@User('org') organizationId: string, @Body() data: any, @User('id') actorId: string) {
+    return this.schoolsService.create(organizationId, data, actorId);
   }
 
   @Get()
@@ -31,13 +31,13 @@ export class SchoolsController {
 
   @Patch(':id')
   @Permissions('school.update')
-  update(@User('org') organizationId: string, @Param('id') id: string, @Body() data: any) {
-    return this.schoolsService.update(organizationId, id, data);
+  update(@User('org') organizationId: string, @Param('id') id: string, @Body() data: any, @User('id') actorId: string) {
+    return this.schoolsService.update(organizationId, id, data, actorId);
   }
 
   @Delete(':id')
   @Permissions('school.archive')
-  remove(@User('org') organizationId: string, @Param('id') id: string) {
-    return this.schoolsService.remove(organizationId, id);
+  remove(@User('org') organizationId: string, @Param('id') id: string, @User('id') actorId: string) {
+    return this.schoolsService.remove(organizationId, id, actorId);
   }
 }

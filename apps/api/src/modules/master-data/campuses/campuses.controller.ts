@@ -12,8 +12,8 @@ export class CampusesController {
 
   @Post()
   @Permissions('campus.create')
-  create(@User('org') organizationId: string, @Body() data: any) {
-    return this.campusesService.create(organizationId, data);
+  create(@User('org') organizationId: string, @Body() data: any, @User('id') actorId: string) {
+    return this.campusesService.create(organizationId, data, actorId);
   }
 
   @Get()
@@ -30,13 +30,13 @@ export class CampusesController {
 
   @Patch(':id')
   @Permissions('campus.update')
-  update(@User('org') organizationId: string, @Param('id') id: string, @Body() data: any) {
-    return this.campusesService.update(organizationId, id, data);
+  update(@User('org') organizationId: string, @Param('id') id: string, @Body() data: any, @User('id') actorId: string) {
+    return this.campusesService.update(organizationId, id, data, actorId);
   }
 
   @Delete(':id')
   @Permissions('campus.archive')
-  remove(@User('org') organizationId: string, @Param('id') id: string) {
-    return this.campusesService.remove(organizationId, id);
+  remove(@User('org') organizationId: string, @Param('id') id: string, @User('id') actorId: string) {
+    return this.campusesService.remove(organizationId, id, actorId);
   }
 }

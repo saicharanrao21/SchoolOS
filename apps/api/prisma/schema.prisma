@@ -21,6 +21,13 @@ enum AuditSeverity {
   CRITICAL
 }
 
+enum AcademicYearStatus {
+  DRAFT
+  ACTIVE
+  CLOSED
+  ARCHIVED
+}
+
 model Organization {
   id          String   @id @default(uuid())
   name        String
@@ -48,6 +55,20 @@ model School {
   name           String
   displayName    String?
   code           String?
+  legalName      String?
+  affiliation    String?
+  logo           String?
+  address        String?
+  city           String?
+  state          String?
+  country        String?
+  postalCode     String?
+  phone          String?
+  email          String?
+  website        String?
+  timezone       String       @default("UTC")
+  currency       String       @default("USD")
+  locale         String       @default("en-US")
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id])
   isActive       Boolean      @default(true)
@@ -55,6 +76,12 @@ model School {
   updatedAt      DateTime     @updatedAt
 
   campuses       Campus[]
+  academicYears  AcademicYear[]
+  departments    Department[]
+  classes        Class[]
+  subjects       Subject[]
+  houses         House[]
+  settings       SchoolSetting[]
   auditLogs      AuditEvent[]
 }
 
@@ -63,13 +90,182 @@ model Campus {
   name      String
   code      String?
   address   String?
+  phone     String?
+  email     String?
+  capacity  Int?
   schoolId  String
   school    School   @relation(fields: [schoolId], references: [id])
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  locations Location[]
   auditLogs AuditEvent[]
+}
+
+model AcademicYear {
+  id        String             @id @default(uuid())
+  name      String             // e.g. "2026-27"
+  startDate DateTime
+  endDate   DateTime
+  status    AcademicYearStatus @default(DRAFT)
+  isCurrent Boolean            @default(false)
+  schoolId  String
+  school    School             @relation(fields: [schoolId], references: [id])
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  terms          Term[]
+  classes        Class[]
+  calendarEvents CalendarEvent[]
+
+  @@unique([schoolId, name])
+}
+
+model Term {
+  id             String       @id @default(uuid())
+  name           String
+  startDate      DateTime
+  endDate        DateTime
+  sequence       Int
+  academicYearId String
+  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([academicYearId, sequence])
+}
+
+model Department {
+  id        String   @id @default(uuid())
+  name      String
+  code      String?
+  schoolId  String
+  school    School   @relation(fields: [schoolId], references: [id])
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([schoolId, name])
+}
+
+model Class {
+  id             String       @id @default(uuid())
+  name           String       // e.g. "Grade 10"
+  code           String?
+  sequence       Int
+  schoolId       String
+  school         School       @relation(fields: [schoolId], references: [id])
+  academicYearId String?
+  academicYear   AcademicYear? @relation(fields: [academicYearId], references: [id])
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  sections       Section[]
+  subjects       ClassSubject[]
+
+  @@unique([schoolId, name, academicYearId])
+}
+
+model Section {
+  id             String   @id @default(uuid())
+  name           String   // e.g. "A"
+  code           String?
+  capacity       Int?
+  classId        String
+  class          Class    @relation(fields: [classId], references: [id])
+  roomId         String?
+  room           Location? @relation(fields: [roomId], references: [id])
+  classTeacherId String?  // Foundation for teacher assignment
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([classId, name])
+}
+
+model Subject {
+  id          String   @id @default(uuid())
+  name        String
+  code        String
+  type        String?  // e.g. "Theory", "Practical"
+  category    String?  // e.g. "Core", "Elective"
+  schoolId    String
+  school      School   @relation(fields: [schoolId], references: [id])
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  classes     ClassSubject[]
+
+  @@unique([schoolId, code])
+}
+
+model ClassSubject {
+  classId   String
+  subjectId String
+  class     Class   @relation(fields: [classId], references: [id])
+  subject   Subject @relation(fields: [subjectId], references: [id])
+
+  @@id([classId, subjectId])
+}
+
+model Location {
+  id        String   @id @default(uuid())
+  name      String
+  code      String?
+  type      String   // e.g. "Classroom", "Lab", "Office"
+  capacity  Int?
+  campusId  String
+  campus    Campus   @relation(fields: [campusId], references: [id])
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sections  Section[]
+}
+
+model House {
+  id        String   @id @default(uuid())
+  name      String
+  code      String?
+  color     String?
+  schoolId  String
+  school    School   @relation(fields: [schoolId], references: [id])
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([schoolId, name])
+}
+
+model CalendarEvent {
+  id             String       @id @default(uuid())
+  name           String
+  type           String       // e.g. "Holiday", "Event", "Exam"
+  startDate      DateTime
+  endDate        DateTime
+  isHoliday      Boolean      @default(false)
+  academicYearId String
+  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id])
+  schoolId       String?      // Optional override
+  campusId       String?      // Optional override
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model SchoolSetting {
+  id        String   @id @default(uuid())
+  category  String   // e.g. "GENERAL", "ACADEMIC"
+  key       String
+  value     Json
+  schoolId  String
+  school    School   @relation(fields: [schoolId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([schoolId, category, key])
 }
 
 model User {
