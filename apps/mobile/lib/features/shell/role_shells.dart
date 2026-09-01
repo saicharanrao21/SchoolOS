@@ -1,5 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../theme/app_theme.dart';
+import '../../networking/api_client.dart';
+import '../parent/data/repositories/parent_repository.dart';
+import '../parent/presentation/bloc/parent_bloc.dart';
+import '../parent/presentation/bloc/parent_event.dart';
+import '../parent/presentation/pages/parent_home_page.dart';
+import '../parent/presentation/pages/parent_academics_page.dart';
+import '../parent/presentation/pages/parent_attendance_page.dart';
+import '../parent/presentation/pages/parent_exams_page.dart';
+import '../parent/presentation/pages/parent_fees_page.dart';
+import '../parent/presentation/pages/parent_transport_page.dart';
+import '../parent/presentation/pages/parent_profile_page.dart';
 
 class RoleShell extends StatefulWidget {
   final List<NavigationDestination> destinations;
@@ -20,37 +32,55 @@ class RoleShell extends StatefulWidget {
 class _RoleShellState extends State<RoleShell> {
   int _selectedIndex = 0;
   bool _showNotifications = false;
+  bool _showProfile = false;
 
   @override
   Widget build(BuildContext context) {
+    String title = widget.title;
+    if (_showNotifications) title = 'Notifications';
+    if (_showProfile) title = 'My Profile';
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(_showNotifications ? 'Notifications' : widget.title, style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.navyColor, fontSize: 20)),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.navyColor, fontSize: 20)),
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: false,
-        leading: _showNotifications ? IconButton(icon: const Icon(Icons.arrow_back, color: AppTheme.navyColor), onPressed: () => setState(() => _showNotifications = false)) : null,
+        leading: (_showNotifications || _showProfile) 
+          ? IconButton(
+              icon: const Icon(Icons.arrow_back, color: AppTheme.navyColor), 
+              onPressed: () => setState(() { _showNotifications = false; _showProfile = false; })
+            ) 
+          : null,
         actions: [
-          if (!_showNotifications)
+          if (!_showNotifications && !_showProfile)
             IconButton(
               icon: const Icon(Icons.notifications_none_rounded, color: AppTheme.navyColor),
               onPressed: () => setState(() => _showNotifications = true),
             ),
-          const Padding(
-            padding: EdgeInsets.only(right: 16.0),
-            child: CircleAvatar(
-              radius: 18,
-              backgroundColor: AppTheme.primaryColor,
-              child: Text('JD', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+          if (!_showProfile)
+            Padding(
+              padding: const EdgeInsets.only(right: 16.0),
+              child: GestureDetector(
+                onTap: () => setState(() => _showProfile = true),
+                child: const CircleAvatar(
+                  radius: 18,
+                  backgroundColor: AppTheme.primaryColor,
+                  child: Text('JD', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                ),
+              ),
             ),
-          ),
         ],
       ),
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 300),
-        child: _showNotifications ? const NotificationCenter() : widget.pages[_selectedIndex],
+        child: _showNotifications 
+          ? const NotificationCenter() 
+          : _showProfile 
+            ? const ParentProfilePage()
+            : widget.pages[_selectedIndex],
       ),
-      bottomNavigationBar: _showNotifications ? null : Container(
+      bottomNavigationBar: (_showNotifications || _showProfile) ? null : Container(
         decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5)),
@@ -111,375 +141,34 @@ class NotificationTile extends StatelessWidget {
 
 class ParentShell extends StatelessWidget {
   const ParentShell({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return RoleShell(
-      title: 'Parent Portal',
-      destinations: const [
-        NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
-        NavigationDestination(icon: Icon(Icons.school_outlined), selectedIcon: Icon(Icons.school), label: 'Academics'),
-        NavigationDestination(icon: Icon(Icons.directions_bus_outlined), selectedIcon: Icon(Icons.directions_bus), label: 'Transport'),
-        NavigationDestination(icon: Icon(Icons.payments_outlined), selectedIcon: Icon(Icons.payments), label: 'Payments'),
-      ],
-      pages: [
-        const ParentHome(),
-        const ChildAcademics(),
-        const ChildTransport(),
-        const ParentPayments(),
-      ],
-    );
-  }
-}
-
-class ChildTransport extends StatelessWidget {
-  const ChildTransport({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(20),
-      children: [
-        const Text('Track Child Transport', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.navyColor)),
-        const SizedBox(height: 20),
-        Container(
-          height: 200,
-          decoration: BoxDecoration(
-            color: Colors.grey[100],
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppTheme.borderColor),
-          ),
-          child: const Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.map_outlined, size: 48, color: Colors.black26),
-                SizedBox(height: 12),
-                Text('Live Tracking Available', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black45)),
-                Text('Vehicle: Bus 04 • On Route', style: TextStyle(fontSize: 12, color: Colors.black38)),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 24),
-        const TransportInfoTile(label: 'Route', value: 'North City Express', icon: Icons.route),
-        const TransportInfoTile(label: 'Assigned Stop', value: 'Central Plaza Main Gate', icon: Icons.location_on),
-        const TransportInfoTile(label: 'Pickup Time', value: '07:45 AM', icon: Icons.access_time),
-        const TransportInfoTile(label: 'Driver', value: 'Mr. Rajesh Kumar', icon: Icons.person),
-      ],
-    );
-  }
-}
-
-class TransportInfoTile extends StatelessWidget {
-  final String label;
-  final String value;
-  final IconData icon;
-
-  const TransportInfoTile({super.key, required this.label, required this.value, required this.icon});
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        leading: Icon(icon, color: AppTheme.primaryColor, size: 20),
-        title: Text(label, style: const TextStyle(fontSize: 11, color: Colors.black45, fontWeight: FontWeight.bold)),
-        subtitle: Text(value, style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.navyColor, fontSize: 14)),
-      ),
-    );
-  }
-}
+    // In production, ApiClient would be injected via GetIt or Provider from Auth session
+    final apiClient = ApiClient(baseUrl: 'http://localhost:3000/api/v1'); 
+    final repository = ParentRepository(apiClient: apiClient);
 
-class ChildResults extends StatelessWidget {
-  const ChildResults({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(20),
-      children: [
-        const Text('Exam Results', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.navyColor)),
-        const SizedBox(height: 20),
-        const ResultCard(examName: 'Unit Test 1', percentage: '88.5%', grade: 'A', status: 'Published'),
-        const ResultCard(examName: 'Monthly Test', percentage: '72.1%', grade: 'B', status: 'Published'),
-      ],
-    );
-  }
-}
-
-class ResultCard extends StatelessWidget {
-  final String examName;
-  final String percentage;
-  final String grade;
-  final String status;
-
-  const ResultCard({super.key, required this.examName, required this.percentage, required this.grade, required this.status});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        title: Text(examName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-        subtitle: Text(status, style: const TextStyle(fontSize: 11, color: Colors.green, fontWeight: FontWeight.bold)),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(percentage, style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.navyColor)),
-                Text('Grade $grade', style: const TextStyle(fontSize: 10, color: Colors.black38)),
-              ],
-            ),
-            const SizedBox(width: 8),
-            const Icon(Icons.chevron_right, size: 16, color: Colors.black12),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class ChildAcademics extends StatelessWidget {
-  const ChildAcademics({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(20),
-      children: [
-        const Text('Academic Progress', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.navyColor)),
-        const SizedBox(height: 20),
-        const AcademicInfoCard(title: 'Active Homework', count: '4', icon: Icons.assignment, color: Colors.blue),
-        const AcademicInfoCard(title: 'Upcoming Tests', count: '2', icon: Icons.event, color: Colors.orange),
-        const AcademicInfoCard(title: 'Attendance Rate', count: '94%', icon: Icons.check_circle, color: Colors.green),
-        const SizedBox(height: 32),
-        const Text('Today\'s Timetable', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.navyColor)),
-        const SizedBox(height: 16),
-        const ScheduleItem(time: '09:00 AM', subject: 'Mathematics', room: 'Room 302'),
-        const ScheduleItem(time: '10:15 AM', subject: 'Physics', room: 'Lab 1'),
-      ],
-    );
-  }
-}
-
-class AcademicInfoCard extends StatelessWidget {
-  final String title;
-  final String count;
-  final IconData icon;
-  final Color color;
-
-  const AcademicInfoCard({super.key, required this.title, required this.count, required this.icon, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-          child: Icon(icon, color: color, size: 20),
-        ),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-        trailing: Text(count, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.navyColor)),
-      ),
-    );
-  }
-}
-
-class ParentPayments extends StatelessWidget {
-  const ParentPayments({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(20),
-      children: [
-        const Text('Fee Summary', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.navyColor)),
-        const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppTheme.borderColor),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
-          ),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Outstanding Balance', style: TextStyle(color: Colors.black54, fontSize: 13)),
-                      SizedBox(height: 4),
-                      Text('₹15,700.00', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppTheme.navyColor)),
-                    ],
-                  ),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(color: Colors.orange.withOpacity(0.1), borderRadius: BorderRadius.circular(15)),
-                    child: const Icon(Icons.priority_high_rounded, color: Colors.orange),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () {},
-                child: const Text('Pay Now'),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 32),
-        const Text('Recent Invoices', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.navyColor)),
-        const SizedBox(height: 16),
-        const InvoiceCard(id: 'INV-2026-00124', date: 'Aug 24, 2026', amount: '₹12,500', status: 'Paid'),
-        const InvoiceCard(id: 'INV-2026-00125', date: 'Aug 25, 2026', amount: '₹15,700', status: 'Pending'),
-      ],
-    );
-  }
-}
-
-class InvoiceCard extends StatelessWidget {
-  final String id;
-  final String date;
-  final String amount;
-  final String status;
-
-  const InvoiceCard({super.key, required this.id, required this.date, required this.amount, required this.status});
-
-  @override
-  Widget build(BuildContext context) {
-    final isPaid = status == 'Paid';
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        title: Text(id, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-        subtitle: Text(date, style: const TextStyle(fontSize: 12)),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(amount, style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.navyColor)),
-            const SizedBox(height: 2),
-            Text(
-              status, 
-              style: TextStyle(
-                fontSize: 10, 
-                fontWeight: FontWeight.bold, 
-                color: isPaid ? Colors.green : Colors.orange
-              )
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class ParentHome extends StatelessWidget {
-  const ParentHome({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Welcome back,', style: TextStyle(color: Colors.black54)),
-          const Text('Robert Johnson', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.navyColor)),
-          const SizedBox(height: 24),
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [AppTheme.primaryColor, Color(0xFF60A5FA)]),
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [BoxShadow(color: AppTheme.primaryColor.withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 8))],
-            ),
-            child: Row(
-              children: [
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Next Event', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
-                      SizedBox(height: 4),
-                      Text('Parent-Teacher Meeting', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                      SizedBox(height: 4),
-                      Text('Tomorrow, 10:00 AM', style: TextStyle(color: Colors.white70, fontSize: 13)),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(15)),
-                  child: const Icon(Icons.calendar_today, color: Colors.white),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 32),
-          const Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('My Children', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.navyColor)),
-              Text('View All', style: TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.bold, fontSize: 14)),
-            ],
-          ),
-          const SizedBox(height: 16),
-          const ChildCard(name: 'Alice Johnson', grade: 'Grade 10-A', id: 'GA260001'),
-          const ChildCard(name: 'Ben Johnson', grade: 'Grade 6-B', id: 'GA260124'),
+    return BlocProvider(
+      create: (context) => ParentBloc(repository: repository)..add(LoadChildren()),
+      child: const RoleShell(
+        title: 'Parent Portal',
+        destinations: [
+          NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
+          NavigationDestination(icon: Icon(Icons.calendar_today_outlined), selectedIcon: Icon(Icons.calendar_today), label: 'Attendance'),
+          NavigationDestination(icon: Icon(Icons.school_outlined), selectedIcon: Icon(Icons.school), label: 'Academics'),
+          NavigationDestination(icon: Icon(Icons.assignment_turned_in_outlined), selectedIcon: Icon(Icons.assignment_turned_in), label: 'Exams'),
+          NavigationDestination(icon: Icon(Icons.account_balance_wallet_outlined), selectedIcon: Icon(Icons.account_balance_wallet), label: 'Fees'),
+          NavigationDestination(icon: Icon(Icons.directions_bus_outlined), selectedIcon: Icon(Icons.directions_bus), label: 'Transport'),
+        ],
+        pages: [
+          ParentHomePage(),
+          ParentAttendancePage(),
+          ParentAcademicsPage(),
+          ParentExamsPage(),
+          ParentFeesPage(),
+          ParentTransportPage(),
         ],
       ),
-    );
-  }
-}
-
-class ChildCard extends StatelessWidget {
-  final String name;
-  final String grade;
-  final String id;
-
-  const ChildCard({super.key, required this.name, required this.grade, required this.id});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(16),
-        leading: CircleAvatar(
-          radius: 25,
-          backgroundColor: AppTheme.secondaryColor.withOpacity(0.1),
-          child: Text(name[0], style: const TextStyle(color: AppTheme.secondaryColor, fontWeight: FontWeight.bold)),
-        ),
-        title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.navyColor)),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 4),
-            Text(grade, style: const TextStyle(fontSize: 13)),
-            Text('ID: $id', style: const TextStyle(fontSize: 11, color: Colors.black38)),
-          ],
-        ),
-        trailing: const Icon(Icons.chevron_right_rounded, color: Colors.black26),
-      ),
-    );
-  }
-}
-
-class ChildrenList extends StatelessWidget {
-  const ChildrenList({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: const [
-        ChildCard(name: 'Alice Johnson', grade: 'Grade 10-A', id: 'GA260001'),
-        ChildCard(name: 'Ben Johnson', grade: 'Grade 6-B', id: 'GA260124'),
-      ],
     );
   }
 }
@@ -797,7 +486,7 @@ class StudentShell extends StatelessWidget {
       pages: [
         const StudentHome(),
         const TeacherTimetable(),
-        const ChildResults(),
+        Center(child: Text('Results coming soon')),
         const Center(child: Text('My Profile')),
       ],
     );
