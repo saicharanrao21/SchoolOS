@@ -195,6 +195,16 @@ const navItems = [
     ]
   },
   {
+    label: 'Security & Safety',
+    icon: ShieldCheck,
+    children: [
+      { label: 'Dashboard', href: '/management/security/dashboard', icon: LayoutDashboard },
+      { label: 'Visitors', href: '/management/security/visitors', icon: Users },
+      { label: 'Student Pickup', href: '/management/security/pickups', icon: UserCheck },
+      { label: 'Incidents', href: '/management/security/incidents', icon: AlertTriangle },
+    ]
+  },
+  {
     label: 'Accounting',
     icon: Landmark,
     children: [

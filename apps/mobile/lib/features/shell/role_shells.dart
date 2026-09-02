@@ -39,6 +39,8 @@ import 'package:schoolos_mobile/features/student/presentation/pages/student_exam
 import 'package:schoolos_mobile/features/student/presentation/pages/student_transport_page.dart';
 import 'package:schoolos_mobile/features/shared/pages/campus_assets_page.dart';
 import 'package:schoolos_mobile/features/hr/presentation/pages/self_service_page.dart';
+import 'package:schoolos_mobile/features/security/presentation/pages/security_dashboard_page.dart';
+import 'package:schoolos_mobile/features/security/presentation/pages/pickup_request_page.dart';
 import 'package:schoolos_mobile/features/shared/pages/campus_life_page.dart';
 import 'package:schoolos_mobile/features/library/presentation/pages/library_page.dart';
 import 'package:schoolos_mobile/features/hostel/presentation/pages/hostel_page.dart';
@@ -147,6 +149,7 @@ class ParentShell extends StatelessWidget {
           NavigationDestination(icon: Icon(Icons.calendar_today_outlined), selectedIcon: Icon(Icons.calendar_today), label: 'Attendance'),
           NavigationDestination(icon: Icon(Icons.account_balance_wallet_outlined), selectedIcon: Icon(Icons.account_balance_wallet), label: 'Fees'),
           NavigationDestination(icon: Icon(Icons.directions_bus_outlined), selectedIcon: Icon(Icons.directions_bus), label: 'Transport'),
+          NavigationDestination(icon: Icon(Icons.shield_outlined), selectedIcon: Icon(Icons.shield), label: 'Security'),
           NavigationDestination(icon: Icon(Icons.explore_outlined), selectedIcon: Icon(Icons.explore), label: 'Life'),
         ],
         pages: [
@@ -154,6 +157,7 @@ class ParentShell extends StatelessWidget {
           ParentAttendancePage(),
           ParentFeesPage(),
           ParentTransportPage(),
+          PickupRequestPage(),
           CampusLifePage(),
         ],
       ),
@@ -348,13 +352,13 @@ class ManagementShell extends StatelessWidget {
         NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'Dashboard'),
         NavigationDestination(icon: Icon(Icons.people_outline), selectedIcon: Icon(Icons.people), label: 'Students'),
         NavigationDestination(icon: Icon(Icons.inventory_2_outlined), selectedIcon: Icon(Icons.inventory_2), label: 'Assets'),
-        NavigationDestination(icon: Icon(Icons.menu), label: 'More'),
+        NavigationDestination(icon: Icon(Icons.security_rounded), label: 'Security'),
       ],
       pages: [
         Center(child: Text('Management Dashboard')),
         Center(child: Text('Student Directory')),
         CampusAssetsPage(),
-        Center(child: Text('Settings & Logs')),
+        SecurityDashboardPage(),
       ],
     );
   }

@@ -45,7 +45,10 @@ async function main() {
     'ptm.read', 'ptm.manage', 'ptm.slots.manage', 'ptm.book', 'ptm.notes.create', 'ptm.notes.read', 'ptm.complete',
     'inventory.read', 'inventory.manage', 'inventory.receive', 'inventory.issue', 'inventory.transfer', 'inventory.adjust',
     'procurement.read', 'procurement.create', 'procurement.approve', 'procurement.po.create', 'procurement.po.approve',
-    'asset.read', 'asset.create', 'asset.assign', 'asset.maintenance', 'asset.dispose', 'vendor.read', 'vendor.manage'
+    'asset.read', 'asset.create', 'asset.assign', 'asset.maintenance', 'asset.dispose', 'vendor.read', 'vendor.manage',
+    'security.read', 'security.manage', 'security.visitors.manage', 'security.visitors.checkin', 'security.visitors.checkout',
+    'pickup.read', 'pickup.request', 'pickup.approve', 'pickup.verify', 'pickup.release',
+    'incident.read', 'incident.report', 'incident.assign', 'incident.resolve', 'incident.close', 'incident.critical'
   ];
 
   for (const p of permissions) {

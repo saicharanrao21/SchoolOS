@@ -15,6 +15,7 @@ class CampusLifePage extends StatelessWidget {
       {'label': 'Hostel', 'icon': Icons.hotel_rounded, 'color': Colors.indigo, 'page': const HostelPage()},
       {'label': 'Events', 'icon': Icons.event_available_rounded, 'color': Colors.purple, 'page': const EventsPage()},
       {'label': 'PTM', 'icon': Icons.people_alt_rounded, 'color': Colors.teal, 'page': const PtmPage()},
+      {'label': 'Incidents', 'icon': Icons.report_problem_rounded, 'color': Colors.red, 'page': const Center(child: Text('Incident Reporting'))},
     ];
 
     return Scaffold(

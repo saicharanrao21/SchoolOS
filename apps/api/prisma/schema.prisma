@@ -539,6 +539,61 @@ enum DepreciationMethod {
   DECLINING_BALANCE
 }
 
+enum VisitorType {
+  PARENT
+  VENDOR
+  CONTRACTOR
+  GUEST
+  ALUMNI
+  OFFICIAL
+  DELIVERY
+  OTHER
+}
+
+enum VisitStatus {
+  PRE_REGISTERED
+  CHECKED_IN
+  CHECKED_OUT
+  OVERDUE
+  CANCELLED
+}
+
+enum PassStatus {
+  PENDING
+  APPROVED
+  ACTIVE
+  EXPIRED
+  REVOKED
+  COMPLETED
+}
+
+enum PickupStatus {
+  REQUESTED
+  APPROVED
+  READY
+  VERIFIED
+  RELEASED
+  REJECTED
+  CANCELLED
+  EXPIRED
+}
+
+enum IncidentSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum IncidentStatus {
+  REPORTED
+  ACKNOWLEDGED
+  INVESTIGATING
+  ACTION_REQUIRED
+  RESOLVED
+  CLOSED
+}
+
 model Organization {
   id          String   @id @default(uuid())
   name        String
@@ -638,6 +693,11 @@ model School {
   inventoryCategories InventoryCategory[]
   assetCategories    AssetCategory[]
   assets             Asset[]
+  securityZones      SecurityZone[]
+  securityGates      SecurityGate[]
+  visitors           Visitor[]
+  pickupRequests     PickupRequest[]
+  incidents          Incident[]
   auditLogs          AuditEvent[]
 }
 
@@ -926,6 +986,9 @@ model Employee {
   payrollResults  PayrollEmployeeResult[]
   loans           EmployeeLoan[]
   reimbursements  EmployeeReimbursement[]
+  shifts          SecurityShift[]
+  hostedVisits    VisitorVisit[]
+  incidentActions IncidentAction[]
 }
 
 model Student {
@@ -980,6 +1043,8 @@ model Student {
   hostelAllocations HostelAllocation[]
   ptmSlots        PtmSlot[]
   auditLogs      AuditEvent[]
+  pickupRequests PickupRequest[]
+  incidents      IncidentParticipant[]
 }
 
 model Guardian {
@@ -3073,7 +3138,177 @@ model PtmSlot {
   internalNotes  String?
   parentNotes    String?
   createdAt      DateTime  @default(now())
-  updatedAt    DateTime            @updatedAt
+  updatedAt            DateTime            @updatedAt
+}
+
+// Phase 19: Security, Visitors, Pickup & Incidents
+
+model SecurityZone {
+  id             String   @id @default(uuid())
+  name           String
+  description    String?
+  schoolId       String
+  school         School   @relation(fields: [schoolId], references: [id])
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  gates          SecurityGate[]
+}
+
+model SecurityGate {
+  id             String   @id @default(uuid())
+  name           String
+  zoneId         String
+  zone           SecurityZone @relation(fields: [zoneId], references: [id])
+  schoolId       String
+  school         School   @relation(fields: [schoolId], references: [id])
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  visitsIn       VisitorVisit[] @relation("EntryGate")
+  visitsOut      VisitorVisit[] @relation("ExitGate")
+  pickups        PickupRequest[]
+  shifts         SecurityShift[]
+}
+
+model SecurityShift {
+  id             String   @id @default(uuid())
+  employeeId     String
+  employee       Employee @relation(fields: [employeeId], references: [id])
+  gateId         String
+  gate           SecurityGate @relation(fields: [gateId], references: [id])
+  startTime      DateTime
+  endTime        DateTime?
+  handoverNotes  String?
+  createdAt      DateTime @default(now())
+}
+
+model Visitor {
+  id             String      @id @default(uuid())
+  name           String
+  phone          String
+  email          String?
+  organization   String?
+  photoUrl       String?
+  idProofType    String?
+  idProofNumber  String?
+  type           VisitorType @default(GUEST)
+  schoolId       String
+  school         School      @relation(fields: [schoolId], references: [id])
+  isActive       Boolean     @default(true)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  visits         VisitorVisit[]
+}
+
+model VisitorVisit {
+  id              String      @id @default(uuid())
+  visitorId       String
+  visitor         Visitor     @relation(fields: [visitorId], references: [id])
+  hostId          String
+  host            Employee    @relation(fields: [hostId], references: [id])
+  purpose         String
+  expectedArrival DateTime
+  actualArrival   DateTime?
+  expectedDeparture DateTime?
+  actualDeparture DateTime?
+  status          VisitStatus @default(PRE_REGISTERED)
+  entryGateId     String?
+  entryGate       SecurityGate? @relation("EntryGate", fields: [entryGateId], references: [id])
+  exitGateId      String?
+  exitGate        SecurityGate? @relation("ExitGate", fields: [exitGateId], references: [id])
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  pass            VisitorPass?
+}
+
+model VisitorPass {
+  id             String      @id @default(uuid())
+  passNumber     String      @unique
+  visitId        String      @unique
+  visit          VisitorVisit @relation(fields: [visitId], references: [id])
+  qrToken        String      @unique
+  validFrom      DateTime
+  validUntil     DateTime
+  status         PassStatus  @default(PENDING)
+  createdAt      DateTime    @default(now())
+}
+
+model PickupRequest {
+  id               String       @id @default(uuid())
+  studentId        String
+  student          Student      @relation(fields: [studentId], references: [id])
+  pickupPersonName String
+  relationship     String
+  phone            String
+  photoUrl         String?
+  expectedTime     DateTime
+  schoolId         String
+  school           School       @relation(fields: [schoolId], references: [id])
+  status           PickupStatus @default(REQUESTED)
+  verifiedAt       DateTime?
+  releasedAt       DateTime?
+  gateId           String?
+  gate             SecurityGate? @relation(fields: [gateId], references: [id])
+  verificationCode String?      // OTP
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+}
+
+model Incident {
+  id             String           @id @default(uuid())
+  title          String
+  description    String
+  category       String           // SAFETY, MEDICAL, SECURITY, etc.
+  severity       IncidentSeverity @default(MEDIUM)
+  status         IncidentStatus   @default(REPORTED)
+  location       String?
+  schoolId       String
+  school         School           @relation(fields: [schoolId], references: [id])
+  occurredAt     DateTime
+  reportedById   String
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  participants   IncidentParticipant[]
+  actions        IncidentAction[]
+  evidence       IncidentEvidence[]
+}
+
+model IncidentParticipant {
+  id          String   @id @default(uuid())
+  incidentId  String
+  incident    Incident @relation(fields: [incidentId], references: [id])
+  userId      String?
+  studentId   String?
+  student     Student? @relation(fields: [studentId], references: [id])
+  role        String   // VICTIM, PERPETRATOR, WITNESS
+  statement   String?
+  createdAt   DateTime @default(now())
+}
+
+model IncidentAction {
+  id           String   @id @default(uuid())
+  incidentId   String
+  incident     Incident @relation(fields: [incidentId], references: [id])
+  actionTaken  String
+  performedById String
+  performedBy  Employee @relation(fields: [performedById], references: [id])
+  createdAt    DateTime @default(now())
+}
+
+model IncidentEvidence {
+  id          String   @id @default(uuid())
+  incidentId  String
+  incident    Incident @relation(fields: [incidentId], references: [id])
+  fileUrl     String
+  fileType    String
+  description String?
+  createdAt   DateTime @default(now())
 }
 
 // Phase 18: Inventory, Procurement & Assets
@@ -3467,5 +3702,7 @@ model EmployeeReimbursement {
   approvedById String?
   paymentDate  DateTime?
   createdAt    DateTime            @default(now())
-  updatedAt    DateTime            @updatedAt
+  updatedAt            DateTime            @updatedAt
 }
+
+
