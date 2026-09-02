@@ -39,7 +39,8 @@ import {
   Hotel,
   UserCheck,
   ClipboardList,
-  MessageSquare
+  MessageSquare,
+  ShoppingCart
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -161,6 +162,36 @@ const navItems = [
     children: [
       { label: 'Dashboard', href: '/management/payroll/dashboard', icon: LayoutDashboard },
       { label: 'Payroll Runs', href: '/management/payroll/runs', icon: RefreshCcw },
+    ]
+  },
+  {
+    label: 'Inventory',
+    icon: FolderTree,
+    children: [
+      { label: 'Dashboard', href: '/management/inventory/dashboard', icon: LayoutDashboard },
+      { label: 'Items', href: '/management/inventory/items', icon: BookOpen },
+      { label: 'Stock Ledger', href: '/management/inventory/ledger', icon: History },
+      { label: 'Warehouses', href: '/management/inventory/warehouses', icon: Home },
+    ]
+  },
+  {
+    label: 'Procurement',
+    icon: ShoppingCart,
+    children: [
+      { label: 'Dashboard', href: '/management/procurement/dashboard', icon: LayoutDashboard },
+      { label: 'Purchase Orders', href: '/management/procurement/orders', icon: FileText },
+      { label: 'Vendors', href: '/management/procurement/vendors', icon: Users },
+      { label: 'Goods Receipt', href: '/management/procurement/receipts', icon: CheckCircle2 },
+    ]
+  },
+  {
+    label: 'Assets',
+    icon: ShieldCheck,
+    children: [
+      { label: 'Dashboard', href: '/management/assets/dashboard', icon: LayoutDashboard },
+      { label: 'Register', href: '/management/assets/register', icon: FileText },
+      { label: 'Assignments', href: '/management/assets/assignments', icon: UserCheck },
+      { label: 'Maintenance', href: '/management/assets/maintenance', icon: Settings },
     ]
   },
   {

@@ -26,6 +26,9 @@ import { EventsModule } from './modules/events/events.module';
 import { PtmModule } from './modules/ptm/ptm.module';
 import { HrModule } from './modules/hr/hr.module';
 import { PayrollModule } from './modules/payroll/payroll.module';
+import { InventoryModule } from './modules/inventory/inventory.module';
+import { ProcurementModule } from './modules/procurement/procurement.module';
+import { AssetsModule } from './modules/assets/assets.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
@@ -60,6 +63,9 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     PtmModule,
     HrModule,
     PayrollModule,
+    InventoryModule,
+    ProcurementModule,
+    AssetsModule,
   ],
 })
 export class AppModule {}

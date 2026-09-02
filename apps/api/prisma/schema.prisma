@@ -487,6 +487,58 @@ enum ReimbursementStatus {
   PAID
 }
 
+enum InventoryItemType {
+  CONSUMABLE
+  NON_CONSUMABLE
+  ASSET
+}
+
+enum StockMovementType {
+  RECEIPT
+  ISSUE
+  TRANSFER
+  RETURN
+  ADJUSTMENT
+  DAMAGE
+  LOSS
+  DISPOSAL
+  OPENING_BALANCE
+}
+
+enum PurchaseRequestStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  CONVERTED
+}
+
+enum PurchaseOrderStatus {
+  DRAFT
+  APPROVED
+  SENT
+  PARTIALLY_RECEIVED
+  RECEIVED
+  CLOSED
+  CANCELLED
+}
+
+enum AssetStatus {
+  IN_STOCK
+  ASSIGNED
+  IN_REPAIR
+  LOST
+  DAMAGED
+  DISPOSED
+  RETIRED
+}
+
+enum DepreciationMethod {
+  STRAIGHT_LINE
+  DECLINING_BALANCE
+}
+
 model Organization {
   id          String   @id @default(uuid())
   name        String
@@ -577,6 +629,15 @@ model School {
   designations       Designation[]
   payrollPeriods     PayrollPeriod[]
   salaryStructures   SalaryStructure[]
+  vendors            Vendor[]
+  warehouses         InventoryWarehouse[]
+  purchaseRequests   PurchaseRequest[]
+  purchaseOrders     PurchaseOrder[]
+  goodsReceipts      GoodsReceipt[]
+  inventoryItems     InventoryItem[]
+  inventoryCategories InventoryCategory[]
+  assetCategories    AssetCategory[]
+  assets             Asset[]
   auditLogs          AuditEvent[]
 }
 
@@ -3012,9 +3073,225 @@ model PtmSlot {
   internalNotes  String?
   parentNotes    String?
   createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  updatedAt    DateTime            @updatedAt
+}
 
-  @@unique([ptmEventId, teacherId, startTime])
+// Phase 18: Inventory, Procurement & Assets
+
+model InventoryWarehouse {
+  id             String   @id @default(uuid())
+  name           String
+  code           String?
+  schoolId       String
+  school         School   @relation(fields: [schoolId], references: [id])
+  campusId       String?
+  address        String?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  movements      StockMovement[] @relation("DestWarehouse")
+  sourceMovements StockMovement[] @relation("SourceWarehouse")
+  items          InventoryItemStock[]
+}
+
+model InventoryCategory {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  schoolId    String
+  school      School   @relation(fields: [schoolId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  items       InventoryItem[] @relation("CategoryItems")
+}
+
+model InventoryItem {
+  id              String            @id @default(uuid())
+  code            String            @unique
+  sku             String?           @unique
+  name            String
+  description     String?
+  type            InventoryItemType @default(CONSUMABLE)
+  schoolId        String
+  school          School            @relation(fields: [schoolId], references: [id])
+  categoryId      String?
+  category        InventoryCategory? @relation("CategoryItems", fields: [categoryId], references: [id])
+  unit            String            @default("Nos")
+  barcode         String?           @unique
+  minStock        Float             @default(0)
+  reorderLevel    Float             @default(0)
+  isActive        Boolean           @default(true)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  stocks          InventoryItemStock[]
+  movements       StockMovement[]
+  purchaseLines   PurchaseOrderLine[]
+}
+
+model InventoryItemStock {
+  id          String             @id @default(uuid())
+  itemId      String
+  item        InventoryItem      @relation(fields: [itemId], references: [id])
+  warehouseId String
+  warehouse   InventoryWarehouse @relation(fields: [warehouseId], references: [id])
+  quantity    Float              @default(0)
+  updatedAt   DateTime           @updatedAt
+
+  @@unique([itemId, warehouseId])
+}
+
+model StockMovement {
+  id               String            @id @default(uuid())
+  itemId           String
+  item             InventoryItem     @relation(fields: [itemId], references: [id])
+  type             StockMovementType
+  quantity         Float
+  sourceWarehouseId String?
+  sourceWarehouse  InventoryWarehouse? @relation("SourceWarehouse", fields: [sourceWarehouseId], references: [id])
+  destWarehouseId  String?
+  destWarehouse    InventoryWarehouse? @relation("DestWarehouse", fields: [destWarehouseId], references: [id])
+  referenceType    String?           // PO, GRN, ISSUE, ADJ
+  referenceId      String?
+  actorId          String
+  reason           String?
+  createdAt        DateTime          @default(now())
+}
+
+model Vendor {
+  id             String   @id @default(uuid())
+  code           String   @unique
+  name           String
+  contactName    String?
+  email          String?
+  phone          String?
+  address        String?
+  taxId          String?
+  schoolId       String
+  school         School   @relation(fields: [schoolId], references: [id])
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  purchaseOrders PurchaseOrder[]
+}
+
+model PurchaseRequest {
+  id             String                @id @default(uuid())
+  requestNumber  String                @unique
+  requesterId    String
+  departmentId   String?
+  schoolId       String
+  school         School                @relation(fields: [schoolId], references: [id])
+  description    String?
+  estimatedCost  Decimal?              @db.Decimal(12, 2)
+  priority       String                @default("NORMAL")
+  status         PurchaseRequestStatus @default(DRAFT)
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+}
+
+model PurchaseOrder {
+  id             String              @id @default(uuid())
+  poNumber       String              @unique
+  vendorId       String
+  vendor         Vendor              @relation(fields: [vendorId], references: [id])
+  schoolId       String
+  school         School              @relation(fields: [schoolId], references: [id])
+  orderDate      DateTime            @default(now())
+  totalAmount    Decimal             @db.Decimal(12, 2)
+  status         PurchaseOrderStatus @default(DRAFT)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  lines          PurchaseOrderLine[]
+  receipts       GoodsReceipt[]
+}
+
+model PurchaseOrderLine {
+  id             String        @id @default(uuid())
+  poId           String
+  po             PurchaseOrder @relation(fields: [poId], references: [id])
+  itemId         String
+  item           InventoryItem @relation(fields: [itemId], references: [id])
+  quantity       Float
+  unitPrice      Decimal       @db.Decimal(12, 2)
+  totalPrice     Decimal       @db.Decimal(12, 2)
+  receivedQty    Float         @default(0)
+}
+
+model GoodsReceipt {
+  id             String        @id @default(uuid())
+  grnNumber      String        @unique
+  poId           String
+  po             PurchaseOrder @relation(fields: [poId], references: [id])
+  schoolId       String
+  school         School        @relation(fields: [schoolId], references: [id])
+  receivedDate   DateTime      @default(now())
+  receivedById   String
+  createdAt      DateTime      @default(now())
+}
+
+model AssetCategory {
+  id             String            @id @default(uuid())
+  name           String
+  schoolId       String
+  school         School            @relation(fields: [schoolId], references: [id])
+  depreciationMethod DepreciationMethod @default(STRAIGHT_LINE)
+  usefulLife     Int               // In years
+  residualValue  Decimal           @default(0) @db.Decimal(12, 2)
+
+  assets         Asset[]
+}
+
+model Asset {
+  id             String         @id @default(uuid())
+  assetTag       String         @unique
+  name           String
+  serialNumber   String?        @unique
+  categoryId     String
+  category       AssetCategory  @relation(fields: [categoryId], references: [id])
+  schoolId       String
+  school         School         @relation(fields: [schoolId], references: [id])
+  purchaseDate   DateTime
+  purchaseCost   Decimal        @db.Decimal(12, 2)
+  vendorId       String?
+  location       String?
+  custodianId    String?
+  status         AssetStatus    @default(IN_STOCK)
+  condition      String         @default("NEW")
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  assignments    AssetAssignment[]
+  maintenance    AssetMaintenance[]
+}
+
+model AssetAssignment {
+  id             String   @id @default(uuid())
+  assetId        String
+  asset          Asset    @relation(fields: [assetId], references: [id])
+  assigneeId     String?  // Employee ID
+  location       String?
+  assignedDate   DateTime @default(now())
+  returnDate     DateTime?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+}
+
+model AssetMaintenance {
+  id             String   @id @default(uuid())
+  assetId        String
+  asset          Asset    @relation(fields: [assetId], references: [id])
+  type           String   // PREVENTIVE, CORRECTIVE
+  date           DateTime
+  description    String
+  cost           Decimal? @db.Decimal(12, 2)
+  vendor         String?
+  performedById  String?
+  createdAt      DateTime @default(now())
 }
 
 // Phase 17: HR & Payroll Models

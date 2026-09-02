@@ -37,6 +37,7 @@ import 'package:schoolos_mobile/features/student/presentation/pages/student_resu
 import 'package:schoolos_mobile/features/student/presentation/pages/student_attendance_page.dart';
 import 'package:schoolos_mobile/features/student/presentation/pages/student_exams_page.dart';
 import 'package:schoolos_mobile/features/student/presentation/pages/student_transport_page.dart';
+import 'package:schoolos_mobile/features/shared/pages/campus_assets_page.dart';
 import 'package:schoolos_mobile/features/hr/presentation/pages/self_service_page.dart';
 import 'package:schoolos_mobile/features/shared/pages/campus_life_page.dart';
 import 'package:schoolos_mobile/features/library/presentation/pages/library_page.dart';
@@ -346,13 +347,13 @@ class ManagementShell extends StatelessWidget {
       destinations: [
         NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'Dashboard'),
         NavigationDestination(icon: Icon(Icons.people_outline), selectedIcon: Icon(Icons.people), label: 'Students'),
-        NavigationDestination(icon: Icon(Icons.account_balance_wallet_outlined), selectedIcon: Icon(Icons.account_balance_wallet), label: 'Finance'),
+        NavigationDestination(icon: Icon(Icons.inventory_2_outlined), selectedIcon: Icon(Icons.inventory_2), label: 'Assets'),
         NavigationDestination(icon: Icon(Icons.menu), label: 'More'),
       ],
       pages: [
         Center(child: Text('Management Dashboard')),
         Center(child: Text('Student Directory')),
-        const FinanceSummary(),
+        CampusAssetsPage(),
         Center(child: Text('Settings & Logs')),
       ],
     );

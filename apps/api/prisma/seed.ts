@@ -42,7 +42,10 @@ async function main() {
     'library.read', 'library.books.create', 'library.books.update', 'library.copies.manage', 'library.issue', 'library.return', 'library.renew', 'library.reservation.manage', 'library.fines.manage',
     'hostel.read', 'hostel.manage', 'hostel.rooms.manage', 'hostel.beds.manage', 'hostel.allocate', 'hostel.transfer', 'hostel.attendance', 'hostel.outpass.manage', 'hostel.incidents.manage',
     'events.read', 'events.create', 'events.update', 'events.publish', 'events.registration.manage', 'events.attendance', 'events.results.manage',
-    'ptm.read', 'ptm.manage', 'ptm.slots.manage', 'ptm.book', 'ptm.notes.create', 'ptm.notes.read', 'ptm.complete'
+    'ptm.read', 'ptm.manage', 'ptm.slots.manage', 'ptm.book', 'ptm.notes.create', 'ptm.notes.read', 'ptm.complete',
+    'inventory.read', 'inventory.manage', 'inventory.receive', 'inventory.issue', 'inventory.transfer', 'inventory.adjust',
+    'procurement.read', 'procurement.create', 'procurement.approve', 'procurement.po.create', 'procurement.po.approve',
+    'asset.read', 'asset.create', 'asset.assign', 'asset.maintenance', 'asset.dispose', 'vendor.read', 'vendor.manage'
   ];
 
   for (const p of permissions) {
