@@ -431,6 +431,62 @@ enum PtmStatus {
   NO_SHOW
 }
 
+enum EmploymentStatus {
+  ONBOARDING
+  PROBATION
+  ACTIVE
+  SUSPENDED
+  RESIGNED
+  TERMINATED
+  RETIRED
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERN
+  TEMPORARY
+}
+
+enum SalaryComponentType {
+  EARNING
+  DEDUCTION
+}
+
+enum CalculationMethod {
+  FIXED
+  PERCENTAGE
+  FORMULA
+}
+
+enum PayrollStatus {
+  DRAFT
+  PROCESSING
+  CALCULATED
+  PENDING_APPROVAL
+  APPROVED
+  LOCKED
+  PAID
+  CANCELLED
+}
+
+enum LoanStatus {
+  REQUESTED
+  APPROVED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum ReimbursementStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  PAID
+}
+
 model Organization {
   id          String   @id @default(uuid())
   name        String
@@ -518,6 +574,9 @@ model School {
   hostels            Hostel[]
   events             SchoolEvent[]
   ptmEvents          PtmEvent[]
+  designations       Designation[]
+  payrollPeriods     PayrollPeriod[]
+  salaryStructures   SalaryStructure[]
   auditLogs          AuditEvent[]
 }
 
@@ -768,7 +827,10 @@ model Employee {
   email          String?     @unique
   phone          String?     @unique
   dateOfJoin     DateTime
-  designation    String?
+  designation    String?     // Keeping for backward compatibility or as a cache
+  designationId  String?
+  currentDesignation Designation? @relation(fields: [designationId], references: [id])
+  employmentStatus EmploymentStatus @default(ACTIVE)
   departmentId   String
   department     Department  @relation(fields: [departmentId], references: [id])
   schoolId       String
@@ -796,6 +858,13 @@ model Employee {
   trips           TransportTrip[]
   inspections     VehicleInspection[]
   ptmSlots        PtmSlot[]
+  contracts       EmploymentContract[]
+  transfers       EmployeeTransfer[]
+  promotions      EmployeePromotion[]
+  salaryAssignments EmployeeSalaryAssignment[]
+  payrollResults  PayrollEmployeeResult[]
+  loans           EmployeeLoan[]
+  reimbursements  EmployeeReimbursement[]
 }
 
 model Student {
@@ -2946,4 +3015,180 @@ model PtmSlot {
   updatedAt      DateTime  @updatedAt
 
   @@unique([ptmEventId, teacherId, startTime])
+}
+
+// Phase 17: HR & Payroll Models
+
+model Designation {
+  id             String      @id @default(uuid())
+  name           String
+  code           String?
+  level          Int         @default(1)
+  schoolId       String
+  school         School      @relation(fields: [schoolId], references: [id])
+  isActive       Boolean     @default(true)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  employees      Employee[]
+
+  @@unique([schoolId, name])
+}
+
+model EmploymentContract {
+  id               String         @id @default(uuid())
+  employeeId       String
+  employee         Employee       @relation(fields: [employeeId], references: [id])
+  type             EmploymentType @default(FULL_TIME)
+  startDate        DateTime
+  endDate          DateTime?
+  probationEndDate DateTime?
+  noticePeriodDays Int            @default(30)
+  status           String         @default("ACTIVE") // ACTIVE, EXPIRED, TERMINATED
+  fileUrl          String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+}
+
+model EmployeeTransfer {
+  id               String   @id @default(uuid())
+  employeeId       String
+  employee         Employee @relation(fields: [employeeId], references: [id])
+  fromDepartmentId String?
+  toDepartmentId   String
+  fromCampusId     String?
+  toCampusId       String
+  effectiveDate    DateTime
+  reason           String?
+  approvedById     String
+  createdAt        DateTime @default(now())
+}
+
+model EmployeePromotion {
+  id                String   @id @default(uuid())
+  employeeId        String
+  employee          Employee @relation(fields: [employeeId], references: [id])
+  fromDesignationId String?
+  toDesignationId   String
+  effectiveDate     DateTime
+  reason            String?
+  approvedById      String
+  createdAt         DateTime @default(now())
+}
+
+model SalaryStructure {
+  id             String            @id @default(uuid())
+  name           String
+  schoolId       String
+  school         School            @relation(fields: [schoolId], references: [id])
+  isActive       Boolean           @default(true)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  components     SalaryComponent[]
+  assignments    EmployeeSalaryAssignment[]
+}
+
+model SalaryComponent {
+  id                String              @id @default(uuid())
+  structureId       String
+  structure         SalaryStructure     @relation(fields: [structureId], references: [id])
+  name              String
+  code              String              // e.g. BASIC, HRA
+  type              SalaryComponentType
+  method            CalculationMethod   @default(FIXED)
+  amount            Decimal?            @db.Decimal(12, 2)
+  percentage        Float?
+  baseComponentCode String?             // Code of component this percentage is based on
+  isTaxable         Boolean             @default(true)
+  isStatutory       Boolean             @default(false)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  @@unique([structureId, code])
+}
+
+model EmployeeSalaryAssignment {
+  id             String          @id @default(uuid())
+  employeeId     String
+  employee       Employee        @relation(fields: [employeeId], references: [id])
+  structureId    String
+  structure      SalaryStructure @relation(fields: [structureId], references: [id])
+  effectiveFrom  DateTime
+  effectiveTo    DateTime?
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+
+  @@unique([employeeId, effectiveFrom])
+}
+
+model PayrollPeriod {
+  id             String        @id @default(uuid())
+  year           Int
+  month          Int
+  startDate      DateTime
+  endDate        DateTime
+  paymentDate    DateTime?
+  status         PayrollStatus @default(DRAFT)
+  schoolId       String
+  school         School        @relation(fields: [schoolId], references: [id])
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  results        PayrollEmployeeResult[]
+
+  @@unique([schoolId, year, month])
+}
+
+model PayrollEmployeeResult {
+  id                String        @id @default(uuid())
+  periodId          String
+  period            PayrollPeriod @relation(fields: [periodId], references: [id])
+  employeeId        String
+  employee          Employee      @relation(fields: [employeeId], references: [id])
+  grossEarnings     Decimal       @db.Decimal(12, 2)
+  totalDeductions   Decimal       @db.Decimal(12, 2)
+  netSalary         Decimal       @db.Decimal(12, 2)
+  payableDays       Float
+  workedDays        Float
+  unpaidLeaveDays   Float
+  calculationDetail Json          // Snapshot of all component values
+  status            String        @default("CALCULATED")
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@unique([periodId, employeeId])
+}
+
+model EmployeeLoan {
+  id               String     @id @default(uuid())
+  employeeId       String
+  employee         Employee   @relation(fields: [employeeId], references: [id])
+  type             String     // LOAN, ADVANCE
+  principalAmount  Decimal    @db.Decimal(12, 2)
+  interestRate     Float      @default(0)
+  totalRepayable   Decimal    @db.Decimal(12, 2)
+  outstandingAmount Decimal   @db.Decimal(12, 2)
+  installmentAmount Decimal   @db.Decimal(12, 2)
+  startPeriodId    String?
+  status           LoanStatus @default(REQUESTED)
+  approvedById     String?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+}
+
+model EmployeeReimbursement {
+  id           String              @id @default(uuid())
+  employeeId   String
+  employee     Employee            @relation(fields: [employeeId], references: [id])
+  type         String              // TRAVEL, MEDICAL, etc.
+  amount       Decimal             @db.Decimal(12, 2)
+  reason       String
+  date         DateTime
+  status       ReimbursementStatus @default(SUBMITTED)
+  receiptUrl   String?
+  approvedById String?
+  paymentDate  DateTime?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
 }

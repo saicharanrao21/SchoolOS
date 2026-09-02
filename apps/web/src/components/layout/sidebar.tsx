@@ -147,6 +147,23 @@ const navItems = [
     ]
   },
   {
+    label: 'Human Resources',
+    icon: Users,
+    children: [
+      { label: 'Dashboard', href: '/management/hr/dashboard', icon: LayoutDashboard },
+      { label: 'Staff Directory', href: '/management/hr/employees', icon: Users },
+      { label: 'Departments', href: '/management/departments', icon: Briefcase },
+    ]
+  },
+  {
+    label: 'Payroll',
+    icon: Wallet,
+    children: [
+      { label: 'Dashboard', href: '/management/payroll/dashboard', icon: LayoutDashboard },
+      { label: 'Payroll Runs', href: '/management/payroll/runs', icon: RefreshCcw },
+    ]
+  },
+  {
     label: 'Accounting',
     icon: Landmark,
     children: [

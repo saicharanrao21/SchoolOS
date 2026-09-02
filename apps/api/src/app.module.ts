@@ -24,6 +24,8 @@ import { LibraryModule } from './modules/library/library.module';
 import { HostelModule } from './modules/hostel/hostel.module';
 import { EventsModule } from './modules/events/events.module';
 import { PtmModule } from './modules/ptm/ptm.module';
+import { HrModule } from './modules/hr/hr.module';
+import { PayrollModule } from './modules/payroll/payroll.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
@@ -56,6 +58,8 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     HostelModule,
     EventsModule,
     PtmModule,
+    HrModule,
+    PayrollModule,
   ],
 })
 export class AppModule {}

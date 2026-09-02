@@ -113,4 +113,38 @@ export class AccountingIntegrationService {
        this.logger.error(`Failed to post fee issue entry: ${e.message}`);
      }
   }
+
+  async handlePayrollPayment(organizationId: string, data: any) {
+    const { schoolId, totalNet, totalGross, periodId, actorId } = data;
+
+    // Dr Salary Expense (5100)
+    // Cr Salary Payable (2100)
+    const expenseAcc = await this.db.chartOfAccount.findFirst({ where: { schoolId, code: '5100' } });
+    const payableAcc = await this.db.chartOfAccount.findFirst({ where: { schoolId, code: '2100' } });
+
+    if (!expenseAcc || !payableAcc) {
+      this.logger.error('Payroll accounting accounts not found');
+      return;
+    }
+
+    let journal = await this.db.journal.findFirst({ where: { schoolId, code: 'PAY' } });
+    if (!journal) journal = await this.db.journal.create({ data: { name: 'Payroll Journal', code: 'PAY', schoolId } });
+
+    try {
+      await this.journalEntries.create(organizationId, {
+        schoolId,
+        journalId: journal.id,
+        date: new Date(),
+        description: `Payroll processed for period ${periodId}`,
+        sourceType: 'PAYROLL',
+        sourceId: periodId,
+        lines: [
+          { accountId: expenseAcc.id, debit: totalGross, credit: 0 },
+          { accountId: payableAcc.id, debit: 0, credit: totalGross },
+        ],
+      }, actorId);
+    } catch (e) {
+      this.logger.error(`Failed to post payroll entry: ${e.message}`);
+    }
+  }
 }
