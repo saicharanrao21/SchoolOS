@@ -12,6 +12,13 @@ import '../parent/presentation/pages/parent_exams_page.dart';
 import '../parent/presentation/pages/parent_fees_page.dart';
 import '../parent/presentation/pages/parent_transport_page.dart';
 import '../parent/presentation/pages/parent_profile_page.dart';
+import '../parent/presentation/pages/parent_notifications_page.dart';
+import '../teacher/data/repositories/teacher_repository.dart';
+import '../teacher/presentation/bloc/teacher_bloc.dart';
+import '../teacher/presentation/bloc/teacher_event.dart';
+import '../teacher/presentation/pages/teacher_home_page.dart';
+import '../teacher/presentation/pages/teacher_classes_page.dart';
+import '../teacher/presentation/pages/teacher_timetable_page.dart';
 
 class RoleShell extends StatefulWidget {
   final List<NavigationDestination> destinations;
@@ -75,7 +82,7 @@ class _RoleShellState extends State<RoleShell> {
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 300),
         child: _showNotifications 
-          ? const NotificationCenter() 
+          ? const ParentNotificationsPage() 
           : _showProfile 
             ? const ParentProfilePage()
             : widget.pages[_selectedIndex],
@@ -98,53 +105,11 @@ class _RoleShellState extends State<RoleShell> {
   }
 }
 
-class NotificationCenter extends StatelessWidget {
-  const NotificationCenter({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(20),
-      children: const [
-        NotificationTile(title: 'Student Absence', body: 'Alice was marked absent today.', time: '2m ago', icon: Icons.person_off, color: Colors.red),
-        NotificationTile(title: 'Fee Payment', body: 'Payment of ₹12,500 received.', time: '1h ago', icon: Icons.payments, color: Colors.green),
-        NotificationTile(title: 'New Homework', body: 'Mathematics assignment posted.', time: '3h ago', icon: Icons.assignment, color: Colors.blue),
-      ],
-    );
-  }
-}
-
-class NotificationTile extends StatelessWidget {
-  final String title;
-  final String body;
-  final String time;
-  final IconData icon;
-  final Color color;
-
-  const NotificationTile({super.key, required this.title, required this.body, required this.time, required this.icon, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: color.withOpacity(0.1),
-          child: Icon(icon, color: color, size: 20),
-        ),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-        subtitle: Text(body, style: const TextStyle(fontSize: 12)),
-        trailing: Text(time, style: const TextStyle(fontSize: 10, color: Colors.black26)),
-      ),
-    );
-  }
-}
-
 class ParentShell extends StatelessWidget {
   const ParentShell({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // In production, ApiClient would be injected via GetIt or Provider from Auth session
     final apiClient = ApiClient(baseUrl: 'http://localhost:3000/api/v1'); 
     final repository = ParentRepository(apiClient: apiClient);
 
@@ -175,298 +140,29 @@ class ParentShell extends StatelessWidget {
 
 class TeacherShell extends StatelessWidget {
   const TeacherShell({super.key});
+  
   @override
   Widget build(BuildContext context) {
-    return const RoleShell(
-      title: 'Teacher Portal',
-      destinations: [
-        NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'Home'),
-        NavigationDestination(icon: Icon(Icons.calendar_today_outlined), selectedIcon: Icon(Icons.calendar_today), label: 'Timetable'),
-        NavigationDestination(icon: Icon(Icons.assignment_outlined), selectedIcon: Icon(Icons.assignment), label: 'Homework'),
-        NavigationDestination(icon: Icon(Icons.border_color_outlined), selectedIcon: Icon(Icons.border_color), label: 'Exams'),
-      ],
-      pages: [
-        const TeacherDashboard(),
-        const TeacherTimetable(),
-        const TeacherHomework(),
-        const TeacherExams(),
-      ],
-    );
-  }
-}
+    final apiClient = ApiClient(baseUrl: 'http://localhost:3000/api/v1'); 
+    final repository = TeacherRepository(apiClient: apiClient);
 
-class TeacherExams extends StatelessWidget {
-  const TeacherExams({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(20),
-      children: [
-        const Text('Examination Tasks', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.navyColor)),
-        const SizedBox(height: 20),
-        const ExamTaskTile(title: 'Term 1 Final - Mathematics', sub: 'Marks Entry Pending', students: '0/38'),
-        const ExamTaskTile(title: 'Monthly Test - Physics', sub: 'Completed', students: '40/40'),
-      ],
-    );
-  }
-}
-
-class ExamTaskTile extends StatelessWidget {
-  final String title;
-  final String sub;
-  final String students;
-
-  const ExamTaskTile({super.key, required this.title, required this.sub, required this.students});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-        subtitle: Text(sub, style: const TextStyle(fontSize: 12)),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(students, style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
-            const Text('Students', style: TextStyle(fontSize: 10, color: Colors.black26)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class TeacherTimetable extends StatelessWidget {
-  const TeacherTimetable({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(20),
-      children: [
-        const Text('My Schedule', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.navyColor)),
-        const SizedBox(height: 20),
-        const ScheduleItem(time: '08:30 AM', subject: 'Grade 10-A • Mathematics', room: 'Room 302'),
-        const ScheduleItem(time: '09:15 AM', subject: 'Grade 10-B • Mathematics', room: 'Room 305'),
-        const ScheduleItem(time: '10:00 AM', subject: 'Break', room: 'Staff Room'),
-        const ScheduleItem(time: '10:15 AM', subject: 'Grade 9-A • Mathematics', room: 'Room 201'),
-      ],
-    );
-  }
-}
-
-class TeacherHomework extends StatelessWidget {
-  const TeacherHomework({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(20),
-      children: [
-        const Text('Assignments', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.navyColor)),
-        const SizedBox(height: 20),
-        const AssignmentTile(title: 'Calculus Worksheet', classInfo: 'Grade 10-A', submissions: '32/38', dueDate: 'Tomorrow'),
-        const AssignmentTile(title: 'Geometry Project', classInfo: 'Grade 10-B', submissions: '15/40', dueDate: 'Sept 05'),
-      ],
-    );
-  }
-}
-
-class AssignmentTile extends StatelessWidget {
-  final String title;
-  final String classInfo;
-  final String submissions;
-  final String dueDate;
-
-  const AssignmentTile({super.key, required this.title, required this.classInfo, required this.submissions, required this.dueDate});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-        subtitle: Text('$classInfo • Due $dueDate', style: const TextStyle(fontSize: 12)),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(submissions, style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
-            const Text('Submissions', style: TextStyle(fontSize: 10, color: Colors.black26)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class TeacherDashboard extends StatelessWidget {
-  const TeacherDashboard({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(20),
-      children: [
-        const Text('Today\'s Overview', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.navyColor)),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: _QuickStat(
-                label: 'Present',
-                value: '38/42',
-                icon: Icons.check_circle_outline,
-                color: Colors.green,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: _QuickStat(
-                label: 'Next Period',
-                value: 'Mathematics',
-                icon: Icons.schedule,
-                color: AppTheme.primaryColor,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 32),
-        const Text('Quick Access', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.navyColor)),
-        const SizedBox(height: 16),
-        const ScheduleItem(time: '09:00 AM', subject: 'Grade 10-A • Mathematics', room: 'Room 302'),
-        const ScheduleItem(time: '10:15 AM', subject: 'Grade 9-B • Physics', room: 'Lab 1'),
-      ],
-    );
-  }
-}
-
-class _QuickStat extends StatelessWidget {
-  final String label;
-  final String value;
-  final IconData icon;
-  final Color color;
-
-  const _QuickStat({required this.label, required this.value, required this.icon, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.borderColor),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(height: 12),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-          Text(label, style: const TextStyle(fontSize: 11, color: Colors.black38, fontWeight: FontWeight.bold)),
+    return BlocProvider(
+      create: (context) => TeacherBloc(repository: repository)..add(LoadTeacherDashboard()),
+      child: const RoleShell(
+        title: 'Teacher Portal',
+        destinations: [
+          NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'Home'),
+          NavigationDestination(icon: Icon(Icons.class_outlined), selectedIcon: Icon(Icons.class_), label: 'Classes'),
+          NavigationDestination(icon: Icon(Icons.calendar_today_outlined), selectedIcon: Icon(Icons.calendar_today), label: 'Schedule'),
+          NavigationDestination(icon: Icon(Icons.assignment_outlined), selectedIcon: Icon(Icons.assignment), label: 'Homework'),
+        ],
+        pages: [
+          TeacherHomePage(),
+          TeacherClassesPage(),
+          TeacherTimetablePage(),
+          Center(child: Text('Homework Management')),
         ],
       ),
-    );
-  }
-}
-
-class ScheduleItem extends StatelessWidget {
-  final String time;
-  final String subject;
-  final String room;
-
-  const ScheduleItem({super.key, required this.time, required this.subject, required this.room});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        leading: Container(
-          width: 4,
-          height: 40,
-          decoration: BoxDecoration(color: AppTheme.primaryColor, borderRadius: BorderRadius.circular(2)),
-        ),
-        title: Text(subject, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-        subtitle: Text('$time • $room', style: const TextStyle(fontSize: 12)),
-        trailing: const Icon(Icons.chevron_right, color: Colors.black12),
-      ),
-    );
-  }
-}
-
-class AttendanceMarking extends StatelessWidget {
-  const AttendanceMarking({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppTheme.borderColor)),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: 'Grade 10-A',
-                      items: const [DropdownMenuItem(value: 'Grade 10-A', child: Text('Grade 10-A', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)))],
-                      onChanged: null,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(minimumSize: const Size(100, 48)),
-                onPressed: () {},
-                child: const Text('Save'),
-              ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: ListView.builder(
-            itemCount: 10,
-            itemBuilder: (context, i) => ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              leading: const CircleAvatar(backgroundColor: AppTheme.backgroundColor, child: Text('AJ', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold))),
-              title: const Text('Student Name', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-              subtitle: const Text('Roll: 10-A-01', style: TextStyle(fontSize: 12)),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _StatusBtn(icon: Icons.check, color: Colors.green, isActive: i % 3 == 0),
-                  const SizedBox(width: 8),
-                  _StatusBtn(icon: Icons.close, color: Colors.red, isActive: i % 3 == 1),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _StatusBtn extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final bool isActive;
-  const _StatusBtn({required this.icon, required this.color, required this.isActive});
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: isActive ? color : Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: isActive ? color : AppTheme.borderColor),
-        boxShadow: isActive ? [BoxShadow(color: color.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))] : null,
-      ),
-      child: Icon(icon, size: 16, color: isActive ? Colors.white : Colors.black26),
     );
   }
 }
@@ -485,8 +181,8 @@ class StudentShell extends StatelessWidget {
       ],
       pages: [
         const StudentHome(),
-        const TeacherTimetable(),
-        Center(child: Text('Results coming soon')),
+        const TeacherTimetablePage(), // Reusing teacher timetable page structure for now
+        const ParentExamsPage(), // Reusing parent exams page structure for now
         const Center(child: Text('My Profile')),
       ],
     );
@@ -522,7 +218,13 @@ class StudentHome extends StatelessWidget {
         const SizedBox(height: 32),
         const Text('My Tasks', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.navyColor)),
         const SizedBox(height: 16),
-        const AssignmentTile(title: 'Calculus Worksheet', classInfo: 'Due Tomorrow', submissions: 'Pending', dueDate: ''),
+        Card(
+          child: ListTile(
+            title: const Text('Calculus Worksheet', style: TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: const Text('Due Tomorrow'),
+            trailing: const Text('Pending', style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
+          ),
+        ),
       ],
     );
   }
@@ -585,7 +287,7 @@ class StatCard extends StatelessWidget {
   final IconData icon;
   final Color color;
 
-  const StatCard({required this.label, required this.value, required this.icon, required this.color});
+  const StatCard({super.key, required this.label, required this.value, required this.icon, required this.color});
 
   @override
   Widget build(BuildContext context) {

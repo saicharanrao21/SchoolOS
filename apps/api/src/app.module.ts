@@ -19,6 +19,7 @@ import { ExamsModule } from './modules/exams/exams.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { TransportModule } from './modules/transport/transport.module';
 import { ParentModule } from './modules/parent/parent.module';
+import { TeacherModule } from './modules/teacher/teacher.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
@@ -46,6 +47,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     NotificationsModule,
     TransportModule,
     ParentModule,
+    TeacherModule,
   ],
 })
 export class AppModule {}
