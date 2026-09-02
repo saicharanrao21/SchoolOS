@@ -38,7 +38,11 @@ async function main() {
     'teacher.homework.create', 'teacher.homework.manage', 'teacher.homework.review', 'teacher.curriculum.read', 'teacher.exam.attendance',
     'teacher.marks.enter', 'teacher.marks.submit', 'teacher.leave.read', 'teacher.leave.create',
     'student.dashboard.read', 'student.profile.read', 'student.timetable.read', 'student.homework.read', 'student.homework.submit',
-    'student.attendance.read', 'student.exam.read', 'student.result.read', 'student.reportcard.read', 'student.transport.read'
+    'student.attendance.read', 'student.exam.read', 'student.result.read', 'student.reportcard.read', 'student.transport.read',
+    'library.read', 'library.books.create', 'library.books.update', 'library.copies.manage', 'library.issue', 'library.return', 'library.renew', 'library.reservation.manage', 'library.fines.manage',
+    'hostel.read', 'hostel.manage', 'hostel.rooms.manage', 'hostel.beds.manage', 'hostel.allocate', 'hostel.transfer', 'hostel.attendance', 'hostel.outpass.manage', 'hostel.incidents.manage',
+    'events.read', 'events.create', 'events.update', 'events.publish', 'events.registration.manage', 'events.attendance', 'events.results.manage',
+    'ptm.read', 'ptm.manage', 'ptm.slots.manage', 'ptm.book', 'ptm.notes.create', 'ptm.notes.read', 'ptm.complete'
   ];
 
   for (const p of permissions) {

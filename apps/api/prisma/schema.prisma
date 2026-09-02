@@ -332,6 +332,105 @@ enum BoardingStatus {
   EXCEPTION
 }
 
+enum BookCondition {
+  NEW
+  GOOD
+  FAIR
+  POOR
+  DAMAGED
+}
+
+enum BookCopyStatus {
+  AVAILABLE
+  ISSUED
+  RESERVED
+  LOST
+  DAMAGED
+  MAINTENANCE
+  WITHDRAWN
+}
+
+enum IssueStatus {
+  ISSUED
+  RETURNED
+  RENEWED
+  OVERDUE
+  LOST
+}
+
+enum ReservationStatus {
+  PENDING
+  FULFILLED
+  CANCELLED
+  EXPIRED
+}
+
+enum FineStatus {
+  UNPAID
+  PAID
+  PARTIALLY_PAID
+  WAIVED
+}
+
+enum HostelType {
+  BOYS
+  GIRLS
+  COED
+}
+
+enum RoomType {
+  SINGLE
+  DOUBLE
+  TRIPLE
+  QUAD
+  DORMITORY
+}
+
+enum BedStatus {
+  AVAILABLE
+  ALLOCATED
+  BLOCKED
+  MAINTENANCE
+}
+
+enum OutpassStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  DEPARTED
+  RETURNED
+  OVERDUE
+  CANCELLED
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  CANCELLED
+  COMPLETED
+}
+
+enum RegistrationStatus {
+  PENDING
+  CONFIRMED
+  WAITLISTED
+  CANCELLED
+}
+
+enum PtmMode {
+  IN_PERSON
+  ONLINE
+  HYBRID
+}
+
+enum PtmStatus {
+  SCHEDULED
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
 model Organization {
   id          String   @id @default(uuid())
   name        String
@@ -415,6 +514,10 @@ model School {
   transportPolicies  TransportPolicy[]
   vehicles           Vehicle[]
   routes             TransportRoute[]
+  libraries          Library[]
+  hostels            Hostel[]
+  events             SchoolEvent[]
+  ptmEvents          PtmEvent[]
   auditLogs          AuditEvent[]
 }
 
@@ -610,6 +713,7 @@ model Location {
   sections  Section[]
   timetableEntries TimetableEntry[]
   examSchedules ExamSchedule[]
+  events    SchoolEvent[]
 }
 
 model House {
@@ -691,6 +795,7 @@ model Employee {
   driverProfile   DriverProfile?
   trips           TransportTrip[]
   inspections     VehicleInspection[]
+  ptmSlots        PtmSlot[]
 }
 
 model Student {
@@ -742,6 +847,8 @@ model Student {
   transportAssignment StudentTransportAssignment?
   boardingEvents  BoardingEvent[]
   authorizedPickups AuthorizedPickupPerson[]
+  hostelAllocations HostelAllocation[]
+  ptmSlots        PtmSlot[]
   auditLogs      AuditEvent[]
 }
 
@@ -760,6 +867,7 @@ model Guardian {
   students    GuardianStudent[]
   userId      String?  @unique
   user        User?    @relation(fields: [userId], references: [id])
+  ptmSlots    PtmSlot[]
 }
 
 model GuardianStudent {
@@ -2061,6 +2169,8 @@ model User {
   notifications  Notification[] @relation("NotificationRecipient")
   devices        NotificationDevice[]
   notificationPreferences NotificationPreference[]
+  libraryMember  LibraryMember?
+  eventParticipation EventParticipant[]
 }
 
 model Role {
@@ -2468,4 +2578,372 @@ model TransportSafetyIncident {
   status         String        @default("OPEN")
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
+}
+
+// Phase 16: Library, Hostel, Events & PTM Models
+
+// 1. Library Management
+model Library {
+  id             String            @id @default(uuid())
+  name           String
+  code           String?
+  schoolId       String
+  school         School            @relation(fields: [schoolId], references: [id])
+  campusId       String?
+  isActive       Boolean           @default(true)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  categories     LibraryCategory[]
+  books          Book[]
+  copies         BookCopy[]
+  issues         LibraryIssue[]
+  reservations   LibraryReservation[]
+  policies       LibraryPolicy?
+}
+
+model LibraryCategory {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  libraryId   String
+  library     Library  @relation(fields: [libraryId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  books       Book[]
+
+  @@unique([libraryId, name])
+}
+
+model Book {
+  id              String          @id @default(uuid())
+  title           String
+  subtitle        String?
+  isbn            String?
+  author          String
+  publisher       String?
+  publicationYear Int?
+  language        String?
+  description     String?
+  coverImage      String?
+  classification  String?         // Classification code
+  libraryId       String
+  library         Library         @relation(fields: [libraryId], references: [id])
+  categoryId      String?
+  category        LibraryCategory? @relation(fields: [categoryId], references: [id])
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  copies          BookCopy[]
+  reservations    LibraryReservation[]
+}
+
+model BookCopy {
+  id              String         @id @default(uuid())
+  accessionNumber String         @unique
+  barcode         String?        @unique
+  bookId          String
+  book            Book           @relation(fields: [bookId], references: [id])
+  libraryId       String
+  library         Library        @relation(fields: [libraryId], references: [id])
+  location        String?        // Shelf/Rack
+  condition       BookCondition  @default(NEW)
+  acquisitionDate DateTime       @default(now())
+  cost            Decimal?       @db.Decimal(10, 2)
+  status          BookCopyStatus @default(AVAILABLE)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  issues          LibraryIssue[]
+}
+
+model LibraryMember {
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id])
+  libraryCard  String   @unique
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  issues       LibraryIssue[]
+  reservations LibraryReservation[]
+}
+
+model LibraryPolicy {
+  id               String   @id @default(uuid())
+  libraryId        String   @unique
+  library          Library  @relation(fields: [libraryId], references: [id])
+  maxBooks         Int      @default(3)
+  issueDuration    Int      @default(14) // Days
+  renewalLimit     Int      @default(2)
+  finePerDay       Decimal  @default(1.00) @db.Decimal(10, 2)
+  gracePeriod      Int      @default(0)
+}
+
+model LibraryIssue {
+  id           String      @id @default(uuid())
+  copyId       String
+  copy         BookCopy    @relation(fields: [copyId], references: [id])
+  memberId     String
+  member       LibraryMember @relation(fields: [memberId], references: [id])
+  issueDate    DateTime    @default(now())
+  dueDate      DateTime
+  returnDate   DateTime?
+  renewCount   Int         @default(0)
+  status       IssueStatus @default(ISSUED)
+  operatorId   String      // User ID of staff
+  libraryId    String
+  library      Library     @relation(fields: [libraryId], references: [id])
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  fine         LibraryFine?
+}
+
+model LibraryReservation {
+  id              String            @id @default(uuid())
+  bookId          String
+  book            Book              @relation(fields: [bookId], references: [id])
+  memberId        String
+  member          LibraryMember     @relation(fields: [memberId], references: [id])
+  libraryId       String
+  library         Library           @relation(fields: [libraryId], references: [id])
+  reservationDate DateTime          @default(now())
+  expiryDate      DateTime?
+  status          ReservationStatus @default(PENDING)
+  createdAt       DateTime          @default(now())
+}
+
+model LibraryFine {
+  id            String     @id @default(uuid())
+  issueId       String     @unique
+  issue         LibraryIssue @relation(fields: [issueId], references: [id])
+  amount        Decimal    @db.Decimal(10, 2)
+  paidAmount    Decimal    @default(0) @db.Decimal(10, 2)
+  status        FineStatus @default(UNPAID)
+  reason        String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+}
+
+// 2. Hostel Management
+model Hostel {
+  id             String           @id @default(uuid())
+  name           String
+  type           HostelType
+  schoolId       String
+  school         School           @relation(fields: [schoolId], references: [id])
+  campusId       String?
+  isActive       Boolean          @default(true)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  buildings      HostelBuilding[]
+  allocations    HostelAllocation[]
+  incidents      HostelIncident[]
+}
+
+model HostelBuilding {
+  id        String        @id @default(uuid())
+  name      String
+  hostelId  String
+  hostel    Hostel        @relation(fields: [hostelId], references: [id])
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  floors    HostelFloor[]
+}
+
+model HostelFloor {
+  id          String         @id @default(uuid())
+  floorNumber Int
+  buildingId  String
+  building    HostelBuilding @relation(fields: [buildingId], references: [id])
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  rooms       HostelRoom[]
+}
+
+model HostelRoom {
+  id        String      @id @default(uuid())
+  roomNumber String
+  type      RoomType    @default(DOUBLE)
+  floorId   String
+  floor     HostelFloor @relation(fields: [floorId], references: [id])
+  capacity  Int
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  beds      HostelBed[]
+}
+
+model HostelBed {
+  id        String    @id @default(uuid())
+  bedNumber String
+  roomId    String
+  room      HostelRoom @relation(fields: [roomId], references: [id])
+  status    BedStatus @default(AVAILABLE)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  allocations HostelAllocation[]
+}
+
+model HostelAllocation {
+  id             String    @id @default(uuid())
+  studentId      String
+  student        Student   @relation(fields: [studentId], references: [id])
+  hostelId       String
+  hostel         Hostel    @relation(fields: [hostelId], references: [id])
+  bedId          String
+  bed            HostelBed @relation(fields: [bedId], references: [id])
+  academicYearId String
+  startDate      DateTime  @default(now())
+  endDate        DateTime?
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  attendance     HostelAttendance[]
+  outpasses      HostelOutpass[]
+
+  @@unique([studentId, academicYearId, isActive])
+}
+
+model HostelAttendance {
+  id           String           @id @default(uuid())
+  allocationId String
+  allocation   HostelAllocation @relation(fields: [allocationId], references: [id])
+  date         DateTime
+  session      String           // MORNING, EVENING, NIGHT
+  status       AttendanceStatus @default(PRESENT)
+  remarks      String?
+  markedById   String
+  createdAt    DateTime         @default(now())
+
+  @@unique([allocationId, date, session])
+}
+
+model HostelOutpass {
+  id             String           @id @default(uuid())
+  allocationId   String
+  allocation     HostelAllocation @relation(fields: [allocationId], references: [id])
+  reason         String
+  departureDate  DateTime
+  expectedReturn DateTime
+  actualReturn   DateTime?
+  status         OutpassStatus    @default(PENDING)
+  approvedById   String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+}
+
+model HostelIncident {
+  id          String   @id @default(uuid())
+  hostelId    String
+  hostel      Hostel   @relation(fields: [hostelId], references: [id])
+  studentId   String?
+  type        String   // MEDICAL, DISCIPLINE, etc.
+  severity    String   @default("MEDIUM")
+  description String
+  status      String   @default("OPEN")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// 3. Events & Activities
+model SchoolEvent {
+  id                String       @id @default(uuid())
+  title             String
+  description       String?
+  category          String       // CULTURAL, SPORTS, ACADEMIC, etc.
+  schoolId          String
+  school            School       @relation(fields: [schoolId], references: [id])
+  campusId          String?
+  venueId           String?
+  venue             Location?    @relation(fields: [venueId], references: [id])
+  startDate         DateTime
+  endDate           DateTime
+  registrationStart DateTime?
+  registrationEnd   DateTime?
+  capacity          Int?
+  status            EventStatus  @default(DRAFT)
+  visibility        String       @default("PUBLIC") // PUBLIC, PRIVATE, GRADE_SPECIFIC
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  participants      EventParticipant[]
+}
+
+model EventParticipant {
+  id               String             @id @default(uuid())
+  eventId          String
+  event            SchoolEvent        @relation(fields: [eventId], references: [id])
+  userId           String
+  user             User               @relation(fields: [userId], references: [id])
+  registrationDate DateTime           @default(now())
+  status           RegistrationStatus @default(PENDING)
+  attendance       Boolean            @default(false)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  result           EventResult?
+
+  @@unique([eventId, userId])
+}
+
+model EventResult {
+  id            String           @id @default(uuid())
+  participantId String           @unique
+  participant   EventParticipant @relation(fields: [participantId], references: [id])
+  position      Int?
+  score         String?
+  award         String?
+  remarks       String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+}
+
+// 4. PTM (Parent Teacher Meeting)
+model PtmEvent {
+  id             String       @id @default(uuid())
+  name           String
+  academicYearId String
+  schoolId       String
+  school         School       @relation(fields: [schoolId], references: [id])
+  date           DateTime
+  startTime      DateTime
+  endTime        DateTime
+  mode           PtmMode      @default(IN_PERSON)
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  slots          PtmSlot[]
+}
+
+model PtmSlot {
+  id             String    @id @default(uuid())
+  ptmEventId     String
+  ptmEvent       PtmEvent  @relation(fields: [ptmEventId], references: [id])
+  teacherId      String
+  teacher        Employee  @relation(fields: [teacherId], references: [id])
+  studentId      String?
+  student        Student?  @relation(fields: [studentId], references: [id])
+  guardianId     String?
+  guardian       Guardian? @relation(fields: [guardianId], references: [id])
+  startTime      DateTime
+  endTime        DateTime
+  room           String?
+  meetingLink    String?
+  status         PtmStatus @default(SCHEDULED)
+  internalNotes  String?
+  parentNotes    String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([ptmEventId, teacherId, startTime])
 }

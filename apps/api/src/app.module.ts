@@ -20,6 +20,10 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { TransportModule } from './modules/transport/transport.module';
 import { ParentModule } from './modules/parent/parent.module';
 import { TeacherModule } from './modules/teacher/teacher.module';
+import { LibraryModule } from './modules/library/library.module';
+import { HostelModule } from './modules/hostel/hostel.module';
+import { EventsModule } from './modules/events/events.module';
+import { PtmModule } from './modules/ptm/ptm.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
@@ -48,6 +52,10 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     TransportModule,
     ParentModule,
     TeacherModule,
+    LibraryModule,
+    HostelModule,
+    EventsModule,
+    PtmModule,
   ],
 })
 export class AppModule {}

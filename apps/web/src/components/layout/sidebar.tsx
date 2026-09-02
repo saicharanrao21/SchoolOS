@@ -34,7 +34,12 @@ import {
   FileSpreadsheet,
   Bus,
   Route,
-  Navigation
+  Navigation,
+  RefreshCcw,
+  Hotel,
+  UserCheck,
+  ClipboardList,
+  MessageSquare
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -101,6 +106,44 @@ const navItems = [
       { label: 'Routes', href: '/management/transport/routes', icon: Route },
       { label: 'Vehicles', href: '/management/transport/vehicles', icon: Bus },
       { label: 'Active Trips', href: '/management/transport/trips', icon: Navigation },
+    ]
+  },
+  {
+    label: 'Library',
+    icon: Library,
+    children: [
+      { label: 'Dashboard', href: '/management/library/dashboard', icon: LayoutDashboard },
+      { label: 'Books', href: '/management/library/books', icon: BookOpen },
+      { label: 'Circulation', href: '/management/library/circulation', icon: RefreshCcw },
+      { label: 'Members', href: '/management/library/members', icon: Users },
+    ]
+  },
+  {
+    label: 'Hostel',
+    icon: Home,
+    children: [
+      { label: 'Dashboard', href: '/management/hostel/dashboard', icon: LayoutDashboard },
+      { label: 'Rooms', href: '/management/hostel/rooms', icon: Hotel },
+      { label: 'Allocations', href: '/management/hostel/allocations', icon: UserCheck },
+      { label: 'Outpasses', href: '/management/hostel/outpasses', icon: LogOut },
+    ]
+  },
+  {
+    label: 'Events',
+    icon: Calendar,
+    children: [
+      { label: 'Dashboard', href: '/management/events/dashboard', icon: LayoutDashboard },
+      { label: 'All Events', href: '/management/events/list', icon: Calendar },
+      { label: 'Registrations', href: '/management/events/registrations', icon: ClipboardList },
+    ]
+  },
+  {
+    label: 'PTM',
+    icon: UserPlus,
+    children: [
+      { label: 'Dashboard', href: '/management/ptm/dashboard', icon: LayoutDashboard },
+      { label: 'Schedule', href: '/management/ptm/schedule', icon: Clock },
+      { label: 'Meetings', href: '/management/ptm/meetings', icon: MessageSquare },
     ]
   },
   {

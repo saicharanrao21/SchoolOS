@@ -37,6 +37,11 @@ import 'package:schoolos_mobile/features/student/presentation/pages/student_resu
 import 'package:schoolos_mobile/features/student/presentation/pages/student_attendance_page.dart';
 import 'package:schoolos_mobile/features/student/presentation/pages/student_exams_page.dart';
 import 'package:schoolos_mobile/features/student/presentation/pages/student_transport_page.dart';
+import 'package:schoolos_mobile/features/shared/pages/campus_life_page.dart';
+import 'package:schoolos_mobile/features/library/presentation/pages/library_page.dart';
+import 'package:schoolos_mobile/features/hostel/presentation/pages/hostel_page.dart';
+import 'package:schoolos_mobile/features/events/presentation/pages/events_page.dart';
+import 'package:schoolos_mobile/features/ptm/presentation/pages/ptm_page.dart';
 
 class RoleShell extends StatefulWidget {
   final List<NavigationDestination> destinations;
@@ -138,18 +143,16 @@ class ParentShell extends StatelessWidget {
         destinations: [
           NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
           NavigationDestination(icon: Icon(Icons.calendar_today_outlined), selectedIcon: Icon(Icons.calendar_today), label: 'Attendance'),
-          NavigationDestination(icon: Icon(Icons.school_outlined), selectedIcon: Icon(Icons.school), label: 'Academics'),
-          NavigationDestination(icon: Icon(Icons.assignment_turned_in_outlined), selectedIcon: Icon(Icons.assignment_turned_in), label: 'Exams'),
           NavigationDestination(icon: Icon(Icons.account_balance_wallet_outlined), selectedIcon: Icon(Icons.account_balance_wallet), label: 'Fees'),
           NavigationDestination(icon: Icon(Icons.directions_bus_outlined), selectedIcon: Icon(Icons.directions_bus), label: 'Transport'),
+          NavigationDestination(icon: Icon(Icons.explore_outlined), selectedIcon: Icon(Icons.explore), label: 'Life'),
         ],
         pages: [
           ParentHomePage(),
           ParentAttendancePage(),
-          ParentAcademicsPage(),
-          ParentExamsPage(),
           ParentFeesPage(),
           ParentTransportPage(),
+          CampusLifePage(),
         ],
       ),
     );
@@ -172,13 +175,13 @@ class TeacherShell extends StatelessWidget {
           NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'Home'),
           NavigationDestination(icon: Icon(Icons.class_outlined), selectedIcon: Icon(Icons.class_), label: 'Classes'),
           NavigationDestination(icon: Icon(Icons.calendar_today_outlined), selectedIcon: Icon(Icons.calendar_today), label: 'Schedule'),
-          NavigationDestination(icon: Icon(Icons.assignment_outlined), selectedIcon: Icon(Icons.assignment), label: 'Homework'),
+          NavigationDestination(icon: Icon(Icons.explore_outlined), selectedIcon: Icon(Icons.explore), label: 'Life'),
         ],
         pages: [
           TeacherHomePage(),
           TeacherClassesPage(),
           TeacherTimetablePage(),
-          Center(child: Text('Homework Management')),
+          CampusLifePage(),
         ],
       ),
     );
@@ -202,16 +205,14 @@ class StudentShell extends StatelessWidget {
           NavigationDestination(icon: Icon(Icons.school_outlined), selectedIcon: Icon(Icons.school), label: 'Academics'),
           NavigationDestination(icon: Icon(Icons.assignment_turned_in_outlined), selectedIcon: Icon(Icons.assignment_turned_in), label: 'Tasks'),
           NavigationDestination(icon: Icon(Icons.analytics_outlined), selectedIcon: Icon(Icons.analytics), label: 'Results'),
-          NavigationDestination(icon: Icon(Icons.calendar_today_outlined), selectedIcon: Icon(Icons.calendar_today), label: 'Attendance'),
-          NavigationDestination(icon: Icon(Icons.directions_bus_outlined), selectedIcon: Icon(Icons.directions_bus), label: 'Transport'),
+          NavigationDestination(icon: Icon(Icons.explore_outlined), selectedIcon: Icon(Icons.explore), label: 'Life'),
         ],
         pages: [
           StudentHomePage(),
           StudentAcademicsPage(),
           StudentTasksPage(),
           StudentResultsPage(),
-          StudentAttendancePage(),
-          StudentTransportPage(),
+          CampusLifePage(),
         ],
       ),
     );
