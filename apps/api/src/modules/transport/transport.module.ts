@@ -11,6 +11,8 @@ import { StudentAssignmentsController } from './assignments/assignments.controll
 import { TripsController } from './trips/trips.controller';
 import { TrackingController } from './tracking/tracking.controller';
 import { TransportPoliciesController } from './policies/policies.controller';
+import { TransportOperatorController } from './operator/transport-operator.controller';
+import { TransportOperatorService } from './operator/transport-operator.service';
 
 @Module({
   controllers: [
@@ -20,6 +22,7 @@ import { TransportPoliciesController } from './policies/policies.controller';
     TripsController,
     TrackingController,
     TransportPoliciesController,
+    TransportOperatorController,
   ],
   providers: [
     VehiclesService,
@@ -28,6 +31,7 @@ import { TransportPoliciesController } from './policies/policies.controller';
     TripsService,
     TrackingService,
     TransportPoliciesService,
+    TransportOperatorService,
   ],
   exports: [
     VehiclesService,
@@ -36,6 +40,7 @@ import { TransportPoliciesController } from './policies/policies.controller';
     TripsService,
     TrackingService,
     TransportPoliciesService,
+    TransportOperatorService,
   ],
 })
 export class TransportModule {}

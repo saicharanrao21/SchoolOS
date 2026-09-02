@@ -690,6 +690,7 @@ model Employee {
   remarkRecords   TeacherRemark[]
   driverProfile   DriverProfile?
   trips           TransportTrip[]
+  inspections     VehicleInspection[]
 }
 
 model Student {
@@ -2293,6 +2294,7 @@ model Vehicle {
 
   documents          VehicleDocument[]
   trips              TransportTrip[]
+  inspections        VehicleInspection[]
 }
 
 model VehicleDocument {
@@ -2410,6 +2412,21 @@ model TransportTrip {
   locations      VehicleLocation[]
   incidents      TransportSafetyIncident[]
   stops          TransportStop[] @relation("StopTrips")
+  inspections    VehicleInspection[]
+}
+
+model VehicleInspection {
+  id             String        @id @default(uuid())
+  tripId         String?
+  trip           TransportTrip? @relation(fields: [tripId], references: [id])
+  vehicleId      String
+  vehicle        Vehicle       @relation(fields: [vehicleId], references: [id])
+  inspectorId    String
+  inspector      Employee      @relation(fields: [inspectorId], references: [id])
+  checklist      Json          // JSON map of item -> status
+  passed         Boolean
+  notes          String?
+  createdAt      DateTime      @default(now())
 }
 
 model BoardingEvent {

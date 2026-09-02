@@ -1,34 +1,42 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../theme/app_theme.dart';
-import '../../networking/api_client.dart';
-import '../parent/data/repositories/parent_repository.dart';
-import '../parent/presentation/bloc/parent_bloc.dart';
-import '../parent/presentation/bloc/parent_event.dart';
-import '../parent/presentation/pages/parent_home_page.dart';
-import '../parent/presentation/pages/parent_academics_page.dart';
-import '../parent/presentation/pages/parent_attendance_page.dart';
-import '../parent/presentation/pages/parent_exams_page.dart';
-import '../parent/presentation/pages/parent_fees_page.dart';
-import '../parent/presentation/pages/parent_transport_page.dart';
-import '../parent/presentation/pages/parent_profile_page.dart';
-import '../parent/presentation/pages/parent_notifications_page.dart';
-import '../teacher/data/repositories/teacher_repository.dart';
-import '../teacher/presentation/bloc/teacher_bloc.dart';
-import '../teacher/presentation/bloc/teacher_event.dart';
-import '../teacher/presentation/pages/teacher_home_page.dart';
-import '../teacher/presentation/pages/teacher_classes_page.dart';
-import '../teacher/presentation/pages/teacher_timetable_page.dart';
-import '../student/data/repositories/student_repository.dart';
-import '../student/presentation/bloc/student_bloc.dart';
-import '../student/presentation/bloc/student_event.dart';
-import '../student/presentation/pages/student_home_page.dart';
-import '../student/presentation/pages/student_academics_page.dart';
-import '../student/presentation/pages/student_tasks_page.dart';
-import '../student/presentation/pages/student_results_page.dart';
-import '../student/presentation/pages/student_attendance_page.dart';
-import '../student/presentation/pages/student_exams_page.dart';
-import '../student/presentation/pages/student_transport_page.dart';
+import 'package:schoolos_mobile/theme/app_theme.dart';
+import 'package:schoolos_mobile/networking/api_client.dart';
+import 'package:schoolos_mobile/features/parent/data/repositories/parent_repository.dart';
+import 'package:schoolos_mobile/features/parent/presentation/bloc/parent_bloc.dart';
+import 'package:schoolos_mobile/features/parent/presentation/bloc/parent_event.dart';
+import 'package:schoolos_mobile/features/parent/presentation/pages/parent_home_page.dart';
+import 'package:schoolos_mobile/features/parent/presentation/pages/parent_academics_page.dart';
+import 'package:schoolos_mobile/features/parent/presentation/pages/parent_attendance_page.dart';
+import 'package:schoolos_mobile/features/parent/presentation/pages/parent_exams_page.dart';
+import 'package:schoolos_mobile/features/parent/presentation/pages/parent_fees_page.dart';
+import 'package:schoolos_mobile/features/parent/presentation/pages/parent_transport_page.dart';
+import 'package:schoolos_mobile/features/parent/presentation/pages/parent_profile_page.dart';
+import 'package:schoolos_mobile/features/parent/presentation/pages/parent_notifications_page.dart';
+import 'package:schoolos_mobile/features/teacher/data/repositories/teacher_repository.dart';
+import 'package:schoolos_mobile/features/teacher/presentation/bloc/teacher_bloc.dart';
+import 'package:schoolos_mobile/features/teacher/presentation/bloc/teacher_event.dart';
+import 'package:schoolos_mobile/features/teacher/presentation/pages/teacher_home_page.dart';
+import 'package:schoolos_mobile/features/teacher/presentation/pages/teacher_classes_page.dart';
+import 'package:schoolos_mobile/features/teacher/presentation/pages/teacher_timetable_page.dart';
+import 'package:schoolos_mobile/features/transport_operator/data/repositories/transport_operator_repository.dart';
+import 'package:schoolos_mobile/features/transport_operator/presentation/bloc/transport_operator_bloc.dart';
+import 'package:schoolos_mobile/features/transport_operator/presentation/bloc/transport_operator_event.dart';
+import 'package:schoolos_mobile/features/transport_operator/presentation/bloc/transport_operator_state.dart';
+import 'package:schoolos_mobile/features/transport_operator/presentation/pages/operator_home_page.dart';
+import 'package:schoolos_mobile/features/transport_operator/presentation/pages/operator_trip_page.dart';
+import 'package:schoolos_mobile/features/transport_operator/presentation/pages/operator_manifest_page.dart';
+import 'package:schoolos_mobile/features/transport_operator/presentation/pages/operator_safety_page.dart';
+import 'package:schoolos_mobile/features/student/data/repositories/student_repository.dart';
+import 'package:schoolos_mobile/features/student/presentation/bloc/student_bloc.dart';
+import 'package:schoolos_mobile/features/student/presentation/bloc/student_event.dart';
+import 'package:schoolos_mobile/features/student/presentation/pages/student_home_page.dart';
+import 'package:schoolos_mobile/features/student/presentation/pages/student_academics_page.dart';
+import 'package:schoolos_mobile/features/student/presentation/pages/student_tasks_page.dart';
+import 'package:schoolos_mobile/features/student/presentation/pages/student_results_page.dart';
+import 'package:schoolos_mobile/features/student/presentation/pages/student_attendance_page.dart';
+import 'package:schoolos_mobile/features/student/presentation/pages/student_exams_page.dart';
+import 'package:schoolos_mobile/features/student/presentation/pages/student_transport_page.dart';
 
 class RoleShell extends StatefulWidget {
   final List<NavigationDestination> destinations;
@@ -210,6 +218,76 @@ class StudentShell extends StatelessWidget {
   }
 }
 
+class DriverShell extends StatelessWidget {
+  const DriverShell({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final apiClient = ApiClient(baseUrl: 'http://localhost:3000/api/v1'); 
+    final repository = TransportOperatorRepository(apiClient: apiClient);
+
+    return BlocProvider(
+      create: (context) => TransportOperatorBloc(repository: repository)..add(LoadOperatorDashboard()),
+      child: RoleShell(
+        title: 'Driver Console',
+        destinations: const [
+          NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'Home'),
+          NavigationDestination(icon: Icon(Icons.route_outlined), selectedIcon: Icon(Icons.route), label: 'Trip'),
+          NavigationDestination(icon: Icon(Icons.people_outline), selectedIcon: Icon(Icons.people), label: 'Manifest'),
+          NavigationDestination(icon: Icon(Icons.warning_amber_rounded), label: 'Safety'),
+        ],
+        pages: [
+          const OperatorHomePage(),
+          const OperatorTripPage(),
+          BlocBuilder<TransportOperatorBloc, TransportOperatorState>(
+            builder: (context, state) {
+              final tripId = state.dashboard?['activeTrip']?['id'];
+              final routeName = state.dashboard?['activeTrip']?['route']?['name'] ?? 'Route';
+              if (tripId == null) return const Center(child: Text('No active trip manifest'));
+              return OperatorManifestPage(tripId: tripId, routeName: routeName);
+            },
+          ),
+          const OperatorSafetyPage(),
+        ],
+      ),
+    );
+  }
+}
+
+class ConductorShell extends StatelessWidget {
+  const ConductorShell({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final apiClient = ApiClient(baseUrl: 'http://localhost:3000/api/v1'); 
+    final repository = TransportOperatorRepository(apiClient: apiClient);
+
+    return BlocProvider(
+      create: (context) => TransportOperatorBloc(repository: repository)..add(LoadOperatorDashboard()),
+      child: RoleShell(
+        title: 'Conductor Console',
+        destinations: const [
+          NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'Home'),
+          NavigationDestination(icon: Icon(Icons.people_outline), selectedIcon: Icon(Icons.people), label: 'Manifest'),
+          NavigationDestination(icon: Icon(Icons.warning_amber_rounded), label: 'Safety'),
+        ],
+        pages: [
+          const OperatorHomePage(),
+          BlocBuilder<TransportOperatorBloc, TransportOperatorState>(
+            builder: (context, state) {
+              final tripId = state.dashboard?['activeTrip']?['id'];
+              final routeName = state.dashboard?['activeTrip']?['route']?['name'] ?? 'Route';
+              if (tripId == null) return const Center(child: Text('No active trip manifest'));
+              return OperatorManifestPage(tripId: tripId, routeName: routeName);
+            },
+          ),
+          const OperatorSafetyPage(),
+        ],
+      ),
+    );
+  }
+}
+
 class StudentHome extends StatelessWidget {
   const StudentHome({super.key});
   @override
@@ -239,11 +317,11 @@ class StudentHome extends StatelessWidget {
         const SizedBox(height: 32),
         const Text('My Tasks', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.navyColor)),
         const SizedBox(height: 16),
-        Card(
+        const Card(
           child: ListTile(
-            title: const Text('Calculus Worksheet', style: TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: const Text('Due Tomorrow'),
-            trailing: const Text('Pending', style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
+            title: Text('Calculus Worksheet', style: TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: Text('Due Tomorrow'),
+            trailing: Text('Pending', style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
           ),
         ),
       ],
@@ -266,7 +344,7 @@ class ManagementShell extends StatelessWidget {
       pages: [
         Center(child: Text('Management Dashboard')),
         Center(child: Text('Student Directory')),
-        FinanceSummary(),
+        const FinanceSummary(),
         Center(child: Text('Settings & Logs')),
       ],
     );
@@ -333,26 +411,6 @@ class StatCard extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class DriverShell extends StatelessWidget {
-  const DriverShell({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return const RoleShell(
-      title: 'Transport Portal',
-      destinations: [
-        NavigationDestination(icon: Icon(Icons.route_outlined), selectedIcon: Icon(Icons.route), label: 'My Trip'),
-        NavigationDestination(icon: Icon(Icons.people_outline), selectedIcon: Icon(Icons.people), label: 'Manifest'),
-        NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profile'),
-      ],
-      pages: [
-        const DriverTripAction(),
-        Center(child: Text('Student Manifest')),
-        Center(child: Text('Driver Profile')),
-      ],
     );
   }
 }
