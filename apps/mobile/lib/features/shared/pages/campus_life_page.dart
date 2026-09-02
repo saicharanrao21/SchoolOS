@@ -4,6 +4,8 @@ import 'package:schoolos_mobile/features/library/presentation/pages/library_page
 import 'package:schoolos_mobile/features/hostel/presentation/pages/hostel_page.dart';
 import 'package:schoolos_mobile/features/events/presentation/pages/events_page.dart';
 import 'package:schoolos_mobile/features/ptm/presentation/pages/ptm_page.dart';
+import 'package:schoolos_mobile/features/shared/pages/documents/document_list_page.dart';
+import 'package:schoolos_mobile/features/shared/pages/certificates/certificate_list_page.dart';
 
 class CampusLifePage extends StatelessWidget {
   const CampusLifePage({super.key});
@@ -15,6 +17,8 @@ class CampusLifePage extends StatelessWidget {
       {'label': 'Hostel', 'icon': Icons.hotel_rounded, 'color': Colors.indigo, 'page': const HostelPage()},
       {'label': 'Events', 'icon': Icons.event_available_rounded, 'color': Colors.purple, 'page': const EventsPage()},
       {'label': 'PTM', 'icon': Icons.people_alt_rounded, 'color': Colors.teal, 'page': const PtmPage()},
+      {'label': 'Documents', 'icon': Icons.file_copy_rounded, 'color': Colors.orange, 'page': const DocumentListPage()},
+      {'label': 'Certificates', 'icon': Icons.verified_rounded, 'color': Colors.blue, 'page': const CertificateListPage()},
       {'label': 'Incidents', 'icon': Icons.report_problem_rounded, 'color': Colors.red, 'page': const Center(child: Text('Incident Reporting'))},
     ];
 

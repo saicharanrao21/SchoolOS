@@ -89,6 +89,13 @@ class _RoleShellState extends State<RoleShell> {
         actions: [
           if (!_showNotifications && !_showProfile)
             IconButton(
+              icon: const Icon(Icons.search_rounded, color: AppTheme.navyColor),
+              onPressed: () {
+                // Open Global Search
+              },
+            ),
+          if (!_showNotifications && !_showProfile)
+            IconButton(
               icon: const Icon(Icons.notifications_none_rounded, color: AppTheme.navyColor),
               onPressed: () => setState(() => _showNotifications = true),
             ),

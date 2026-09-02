@@ -30,6 +30,10 @@ import { InventoryModule } from './modules/inventory/inventory.module';
 import { ProcurementModule } from './modules/procurement/procurement.module';
 import { AssetsModule } from './modules/assets/assets.module';
 import { SecurityModule } from './modules/security/security.module';
+import { DmsModule } from './modules/dms/dms.module';
+import { CertificatesModule } from './modules/certificates/certificates.module';
+import { DataExchangeModule } from './modules/data-exchange/data-exchange.module';
+import { SearchModule } from './modules/search/search.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
@@ -68,6 +72,10 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     ProcurementModule,
     AssetsModule,
     SecurityModule,
+    DmsModule,
+    CertificatesModule,
+    DataExchangeModule,
+    SearchModule,
   ],
 })
 export class AppModule {}

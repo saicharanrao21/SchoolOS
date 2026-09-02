@@ -40,7 +40,8 @@ import {
   UserCheck,
   ClipboardList,
   MessageSquare,
-  ShoppingCart
+  ShoppingCart,
+  AlertTriangle
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -202,6 +203,15 @@ const navItems = [
       { label: 'Visitors', href: '/management/security/visitors', icon: Users },
       { label: 'Student Pickup', href: '/management/security/pickups', icon: UserCheck },
       { label: 'Incidents', href: '/management/security/incidents', icon: AlertTriangle },
+    ]
+  },
+  {
+    label: 'Information Management',
+    icon: FolderTree,
+    children: [
+      { label: 'Document Center', href: '/management/dms', icon: FileText },
+      { label: 'Certificates', href: '/management/certificates', icon: ShieldCheck },
+      { label: 'Data Exchange', href: '/management/exchange', icon: RefreshCcw },
     ]
   },
   {

@@ -487,6 +487,56 @@ enum ReimbursementStatus {
   PAID
 }
 
+enum DocumentStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+  EXPIRED
+  REVOKED
+  DELETED
+}
+
+enum VerificationStatus {
+  UPLOADED
+  UNDER_REVIEW
+  VERIFIED
+  REJECTED
+}
+
+enum ConfidentialityLevel {
+  PUBLIC
+  INTERNAL
+  CONFIDENTIAL
+  RESTRICTED
+}
+
+enum CertificateStatus {
+  DRAFT
+  APPROVED
+  ISSUED
+  REVOKED
+}
+
+enum ImportStatus {
+  UPLOADED
+  VALIDATING
+  VALIDATED
+  PROCESSING
+  COMPLETED
+  FAILED
+  PARTIAL
+}
+
+enum ExportStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+  EXPIRED
+}
+
+
+
 enum InventoryItemType {
   CONSUMABLE
   NON_CONSUMABLE
@@ -613,6 +663,10 @@ model Organization {
 
   schools     School[]
   users       User[]
+  documents    DmsDocument[]
+  certificates CertificateIssue[]
+  importJobs   ImportJob[]
+  exportJobs   ExportJob[]
   auditLogs   AuditEvent[]
 }
 
@@ -698,6 +752,11 @@ model School {
   visitors           Visitor[]
   pickupRequests     PickupRequest[]
   incidents          Incident[]
+  documents          DmsDocument[]
+  certificateTemplates CertificateTemplate[]
+  certificates       CertificateIssue[]
+  importJobs         ImportJob[]
+  exportJobs         ExportJob[]
   auditLogs          AuditEvent[]
 }
 
@@ -2366,6 +2425,10 @@ model User {
   notificationPreferences NotificationPreference[]
   libraryMember  LibraryMember?
   eventParticipation EventParticipant[]
+  uploadedDocuments  DmsDocument[] @relation("DocumentUploader")
+  uploadedVersions   DocumentVersion[]
+  importJobs         ImportJob[]
+  exportJobs         ExportJob[]
 }
 
 model Role {
@@ -3141,6 +3204,141 @@ model PtmSlot {
   updatedAt            DateTime            @updatedAt
 }
 
+// Phase 20: Documents, Certificates, Import & Export
+
+model DmsDocument {
+  id                 String              @id @default(uuid())
+  title              String
+  description        String?
+  category           String              // IDENTITY, ACADEMIC, etc.
+  type               String              // BIRTH_CERT, PASSPORT, etc.
+  status             DocumentStatus      @default(ACTIVE)
+  verificationStatus VerificationStatus  @default(UPLOADED)
+  confidentiality    ConfidentialityLevel @default(INTERNAL)
+
+  ownerId            String              // Polymorphic owner ID
+  ownerType          String              // Student, Employee, etc.
+
+  originalFilename   String
+  mimeType           String
+  fileSize           Int
+  storagePath        String
+  checksum           String?
+
+  expiryDate         DateTime?
+  issueDate          DateTime?
+  issuingAuthority   String?
+
+  organizationId     String
+  organization       Organization        @relation(fields: [organizationId], references: [id])
+  schoolId           String?
+  school             School?             @relation(fields: [schoolId], references: [id])
+
+  uploadedById       String
+  uploadedBy         User                @relation("DocumentUploader", fields: [uploadedById], references: [id])
+  verifiedById       String?
+  verifiedAt         DateTime?
+
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  versions           DocumentVersion[]
+}
+
+model DocumentVersion {
+  id           String      @id @default(uuid())
+  documentId   String
+  document     DmsDocument @relation(fields: [documentId], references: [id])
+  version      Int
+  storagePath  String
+  checksum     String?
+  uploadedById String
+  uploadedBy   User        @relation(fields: [uploadedById], references: [id])
+  reason       String?
+  createdAt    DateTime    @default(now())
+}
+
+model CertificateTemplate {
+  id             String   @id @default(uuid())
+  name           String
+  title          String
+  body           String   // Liquid or Handlebars style template
+  styles         Json?    // Design tokens, logo position, etc.
+  schoolId       String
+  school         School   @relation(fields: [schoolId], references: [id])
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  issuedCertificates CertificateIssue[]
+}
+
+model CertificateIssue {
+  id                String            @id @default(uuid())
+  certificateNumber String            @unique
+  templateId        String
+  template          CertificateTemplate @relation(fields: [templateId], references: [id])
+  recipientId       String            // User ID
+  recipientType     String            // Student, Employee
+  issueDate         DateTime          @default(now())
+  expiryDate        DateTime?
+  status            CertificateStatus @default(ISSUED)
+  data              Json              // Snapshot of variables used
+  fileUrl           String?
+  verificationToken String            @unique
+  revokedAt         DateTime?
+  revokedById       String?
+
+  organizationId    String
+  organization      Organization      @relation(fields: [organizationId], references: [id])
+  schoolId          String
+  school            School            @relation(fields: [schoolId], references: [id])
+
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+}
+
+model ImportJob {
+  id             String       @id @default(uuid())
+  template       String       // STUDENT, EMPLOYEE, etc.
+  status         ImportStatus @default(UPLOADED)
+  filePath       String
+  rowCount       Int          @default(0)
+  processedCount Int          @default(0)
+  errorCount     Int          @default(0)
+  errors         Json?        // List of errors by row
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  schoolId       String
+  school         School       @relation(fields: [schoolId], references: [id])
+  createdById    String
+  createdBy      User         @relation(fields: [createdById], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model ExportJob {
+  id             String       @id @default(uuid())
+  entity         String       // Student, Employee, etc.
+  format         String       // CSV, XLSX, PDF
+  status         ExportStatus @default(QUEUED)
+  filters        Json?
+  fileUrl        String?
+  expiryDate     DateTime?
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  schoolId       String
+  school         School       @relation(fields: [schoolId], references: [id])
+  createdById    String
+  createdBy      User         @relation(fields: [createdById], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+
+
+
+
 // Phase 19: Security, Visitors, Pickup & Incidents
 
 model SecurityZone {
@@ -3704,5 +3902,13 @@ model EmployeeReimbursement {
   createdAt    DateTime            @default(now())
   updatedAt            DateTime            @updatedAt
 }
+
+// Phase 20: Documents, Certificates, Import & Export
+
+
+
+
+
+
 
 
