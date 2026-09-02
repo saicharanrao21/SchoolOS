@@ -714,6 +714,8 @@ model Student {
   house           House?        @relation(fields: [houseId], references: [id])
   metadata        Json?
   isActive        Boolean       @default(true)
+  userId          String?       @unique
+  user            User?         @relation(fields: [userId], references: [id])
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
@@ -2049,6 +2051,7 @@ model User {
   auditLogs      AuditEvent[]
   guardian       Guardian?
   employee       Employee?
+  student        Student?
 
   assignedEnquiries AdmissionEnquiry[]
   followUps         AdmissionFollowUp[]

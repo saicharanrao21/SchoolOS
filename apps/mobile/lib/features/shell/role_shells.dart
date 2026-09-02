@@ -19,6 +19,16 @@ import '../teacher/presentation/bloc/teacher_event.dart';
 import '../teacher/presentation/pages/teacher_home_page.dart';
 import '../teacher/presentation/pages/teacher_classes_page.dart';
 import '../teacher/presentation/pages/teacher_timetable_page.dart';
+import '../student/data/repositories/student_repository.dart';
+import '../student/presentation/bloc/student_bloc.dart';
+import '../student/presentation/bloc/student_event.dart';
+import '../student/presentation/pages/student_home_page.dart';
+import '../student/presentation/pages/student_academics_page.dart';
+import '../student/presentation/pages/student_tasks_page.dart';
+import '../student/presentation/pages/student_results_page.dart';
+import '../student/presentation/pages/student_attendance_page.dart';
+import '../student/presentation/pages/student_exams_page.dart';
+import '../student/presentation/pages/student_transport_page.dart';
 
 class RoleShell extends StatefulWidget {
   final List<NavigationDestination> destinations;
@@ -169,22 +179,33 @@ class TeacherShell extends StatelessWidget {
 
 class StudentShell extends StatelessWidget {
   const StudentShell({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return const RoleShell(
-      title: 'My Student Portal',
-      destinations: [
-        NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'Home'),
-        NavigationDestination(icon: Icon(Icons.calendar_today_outlined), selectedIcon: Icon(Icons.calendar_today), label: 'Timetable'),
-        NavigationDestination(icon: Icon(Icons.assignment_turned_in_outlined), selectedIcon: Icon(Icons.assignment_turned_in), label: 'Results'),
-        NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profile'),
-      ],
-      pages: [
-        const StudentHome(),
-        const TeacherTimetablePage(), // Reusing teacher timetable page structure for now
-        const ParentExamsPage(), // Reusing parent exams page structure for now
-        const Center(child: Text('My Profile')),
-      ],
+    final apiClient = ApiClient(baseUrl: 'http://localhost:3000/api/v1'); 
+    final repository = StudentRepository(apiClient: apiClient);
+
+    return BlocProvider(
+      create: (context) => StudentBloc(repository: repository)..add(LoadStudentDashboard()),
+      child: const RoleShell(
+        title: 'My Student Portal',
+        destinations: [
+          NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'Home'),
+          NavigationDestination(icon: Icon(Icons.school_outlined), selectedIcon: Icon(Icons.school), label: 'Academics'),
+          NavigationDestination(icon: Icon(Icons.assignment_turned_in_outlined), selectedIcon: Icon(Icons.assignment_turned_in), label: 'Tasks'),
+          NavigationDestination(icon: Icon(Icons.analytics_outlined), selectedIcon: Icon(Icons.analytics), label: 'Results'),
+          NavigationDestination(icon: Icon(Icons.calendar_today_outlined), selectedIcon: Icon(Icons.calendar_today), label: 'Attendance'),
+          NavigationDestination(icon: Icon(Icons.directions_bus_outlined), selectedIcon: Icon(Icons.directions_bus), label: 'Transport'),
+        ],
+        pages: [
+          StudentHomePage(),
+          StudentAcademicsPage(),
+          StudentTasksPage(),
+          StudentResultsPage(),
+          StudentAttendancePage(),
+          StudentTransportPage(),
+        ],
+      ),
     );
   }
 }

@@ -36,7 +36,9 @@ async function main() {
     'transport.safety.manage', 'transport.emergency.create', 'transport.emergency.manage', 'pickup.read', 'pickup.manage', 'pickup.verify',
     'teacher.dashboard.read', 'teacher.profile.read', 'teacher.profile.manage', 'teacher.class.read', 'teacher.student.read',
     'teacher.homework.create', 'teacher.homework.manage', 'teacher.homework.review', 'teacher.curriculum.read', 'teacher.exam.attendance',
-    'teacher.marks.enter', 'teacher.marks.submit', 'teacher.leave.read', 'teacher.leave.create'
+    'teacher.marks.enter', 'teacher.marks.submit', 'teacher.leave.read', 'teacher.leave.create',
+    'student.dashboard.read', 'student.profile.read', 'student.timetable.read', 'student.homework.read', 'student.homework.submit',
+    'student.attendance.read', 'student.exam.read', 'student.result.read', 'student.reportcard.read', 'student.transport.read'
   ];
 
   for (const p of permissions) {
