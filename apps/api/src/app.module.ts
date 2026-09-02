@@ -34,6 +34,7 @@ import { DmsModule } from './modules/dms/dms.module';
 import { CertificatesModule } from './modules/certificates/certificates.module';
 import { DataExchangeModule } from './modules/data-exchange/data-exchange.module';
 import { SearchModule } from './modules/search/search.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
@@ -76,6 +77,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     CertificatesModule,
     DataExchangeModule,
     SearchModule,
+    AnalyticsModule,
   ],
 })
 export class AppModule {}

@@ -158,6 +158,16 @@ const navItems = [
     ]
   },
   {
+    label: 'Analytics & BI',
+    icon: BarChart3,
+    children: [
+      { label: 'Executive BI', href: '/management/analytics/executive', icon: LayoutDashboard },
+      { label: 'Student Insights', href: '/management/analytics/students', icon: Users },
+      { label: 'Financial Analytics', href: '/management/analytics/finance', icon: Wallet },
+      { label: 'Academic Reports', href: '/management/analytics/academics', icon: BookOpen },
+    ]
+  },
+  {
     label: 'Payroll',
     icon: Wallet,
     children: [

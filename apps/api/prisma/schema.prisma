@@ -667,6 +667,8 @@ model Organization {
   certificates CertificateIssue[]
   importJobs   ImportJob[]
   exportJobs   ExportJob[]
+  analyticsDashboards AnalyticsDashboard[]
+  analyticsReports    AnalyticsSavedReport[]
   auditLogs   AuditEvent[]
 }
 
@@ -757,6 +759,8 @@ model School {
   certificates       CertificateIssue[]
   importJobs         ImportJob[]
   exportJobs         ExportJob[]
+  analyticsDashboards AnalyticsDashboard[]
+  analyticsReports    AnalyticsSavedReport[]
   auditLogs          AuditEvent[]
 }
 
@@ -2429,6 +2433,7 @@ model User {
   uploadedVersions   DocumentVersion[]
   importJobs         ImportJob[]
   exportJobs         ExportJob[]
+  analyticsReports   AnalyticsSavedReport[]
 }
 
 model Role {
@@ -3204,6 +3209,54 @@ model PtmSlot {
   updatedAt            DateTime            @updatedAt
 }
 
+// Phase 21: Enterprise Analytics & BI
+
+model AnalyticsDashboard {
+  id             String            @id @default(uuid())
+  name           String
+  description    String?
+  role           String?           // Target role (MANAGEMENT, TEACHER, etc.)
+  isSystem       Boolean           @default(false)
+  layout         Json?             // Widget arrangement
+  organizationId String
+  organization   Organization      @relation(fields: [organizationId], references: [id])
+  schoolId       String?
+  school         School?           @relation(fields: [schoolId], references: [id])
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  widgets        AnalyticsWidget[]
+}
+
+model AnalyticsWidget {
+  id             String             @id @default(uuid())
+  dashboardId    String
+  dashboard      AnalyticsDashboard @relation(fields: [dashboardId], references: [id])
+  title          String
+  type           String             // KPI, CHART, TABLE
+  kpiKey         String             // Key in KPI engine
+  config         Json?              // Visual config (chart type, colors)
+  dataSource     String?            // API endpoint or specific query path
+  createdAt      DateTime           @default(now())
+}
+
+model AnalyticsSavedReport {
+  id             String       @id @default(uuid())
+  name           String
+  description    String?
+  entityType     String       // STUDENT, FINANCE, etc.
+  config         Json         // Columns, filters, sorting
+  isPublic       Boolean      @default(false)
+  createdById    String
+  createdBy      User         @relation(fields: [createdById], references: [id])
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  schoolId       String?
+  school         School?      @relation(fields: [schoolId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
 // Phase 20: Documents, Certificates, Import & Export
 
 model DmsDocument {
@@ -3903,7 +3956,7 @@ model EmployeeReimbursement {
   updatedAt            DateTime            @updatedAt
 }
 
-// Phase 20: Documents, Certificates, Import & Export
+
 
 
 

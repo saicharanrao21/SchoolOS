@@ -38,6 +38,7 @@ import 'package:schoolos_mobile/features/student/presentation/pages/student_atte
 import 'package:schoolos_mobile/features/student/presentation/pages/student_exams_page.dart';
 import 'package:schoolos_mobile/features/student/presentation/pages/student_transport_page.dart';
 import 'package:schoolos_mobile/features/shared/pages/campus_assets_page.dart';
+import 'package:schoolos_mobile/features/analytics/presentation/pages/analytics_dashboard_page.dart';
 import 'package:schoolos_mobile/features/hr/presentation/pages/self_service_page.dart';
 import 'package:schoolos_mobile/features/security/presentation/pages/security_dashboard_page.dart';
 import 'package:schoolos_mobile/features/security/presentation/pages/pickup_request_page.dart';
@@ -357,15 +358,15 @@ class ManagementShell extends StatelessWidget {
       title: 'Admin Console',
       destinations: [
         NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'Dashboard'),
+        NavigationDestination(icon: Icon(Icons.show_chart_rounded), selectedIcon: Icon(Icons.insights_rounded), label: 'Insights'),
         NavigationDestination(icon: Icon(Icons.people_outline), selectedIcon: Icon(Icons.people), label: 'Students'),
-        NavigationDestination(icon: Icon(Icons.inventory_2_outlined), selectedIcon: Icon(Icons.inventory_2), label: 'Assets'),
-        NavigationDestination(icon: Icon(Icons.security_rounded), label: 'Security'),
+        NavigationDestination(icon: Icon(Icons.menu), label: 'More'),
       ],
       pages: [
         Center(child: Text('Management Dashboard')),
+        AnalyticsDashboardPage(),
         Center(child: Text('Student Directory')),
-        CampusAssetsPage(),
-        SecurityDashboardPage(),
+        Center(child: Text('Settings & Logs')),
       ],
     );
   }
