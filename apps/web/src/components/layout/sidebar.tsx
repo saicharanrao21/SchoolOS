@@ -41,7 +41,9 @@ import {
   ClipboardList,
   MessageSquare,
   ShoppingCart,
-  AlertTriangle
+  AlertTriangle,
+  GitBranch,
+  Inbox
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -165,6 +167,15 @@ const navItems = [
       { label: 'Student Insights', href: '/management/analytics/students', icon: Users },
       { label: 'Financial Analytics', href: '/management/analytics/finance', icon: Wallet },
       { label: 'Academic Reports', href: '/management/analytics/academics', icon: BookOpen },
+    ]
+  },
+  {
+    label: 'Workflows & Approvals',
+    icon: GitBranch,
+    children: [
+      { label: 'Approval Inbox', href: '/management/workflow/inbox', icon: Inbox },
+      { label: 'My Requests', href: '/management/workflow/my-requests', icon: FileText },
+      { label: 'Workflow Builder', href: '/management/workflow/builder', icon: Settings },
     ]
   },
   {

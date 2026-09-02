@@ -535,6 +535,40 @@ enum ExportStatus {
   EXPIRED
 }
 
+enum WorkflowStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum WorkflowInstanceState {
+  PENDING
+  IN_PROGRESS
+  APPROVED
+  REJECTED
+  REWORK
+  CANCELLED
+  FAILED
+}
+
+enum WorkflowStepType {
+  APPROVAL
+  REVIEW
+  ACTION
+  NOTIFICATION
+  CONDITION
+  WAIT
+  PARALLEL
+  JOIN
+}
+
+enum WorkflowActionStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  RETRYING
+}
+
 
 
 enum InventoryItemType {
@@ -669,6 +703,9 @@ model Organization {
   exportJobs   ExportJob[]
   analyticsDashboards AnalyticsDashboard[]
   analyticsReports    AnalyticsSavedReport[]
+  workflowDefinitions WorkflowDefinition[]
+  workflowInstances   WorkflowInstance[]
+  workflowDelegations WorkflowDelegation[]
   auditLogs   AuditEvent[]
 }
 
@@ -761,6 +798,8 @@ model School {
   exportJobs         ExportJob[]
   analyticsDashboards AnalyticsDashboard[]
   analyticsReports    AnalyticsSavedReport[]
+  workflowDefinitions WorkflowDefinition[]
+  workflowInstances   WorkflowInstance[]
   auditLogs          AuditEvent[]
 }
 
@@ -2434,6 +2473,10 @@ model User {
   importJobs         ImportJob[]
   exportJobs         ExportJob[]
   analyticsReports   AnalyticsSavedReport[]
+  initiatedWorkflows WorkflowInstance[] @relation("WorkflowInitiator")
+  workflowApprovals  WorkflowApproval[] @relation("WorkflowApprover")
+  workflowDelegationsFrom WorkflowDelegation[] @relation("Delegator")
+  workflowDelegationsTo   WorkflowDelegation[] @relation("Delegatee")
 }
 
 model Role {
@@ -3209,6 +3252,135 @@ model PtmSlot {
   updatedAt            DateTime            @updatedAt
 }
 
+// Phase 22: Unified Workflow, Approvals & Automation Engine
+
+model WorkflowDefinition {
+  id             String            @id @default(uuid())
+  name           String
+  description    String?
+  module         String            // e.g. HR, PROCUREMENT
+  entityType     String            // e.g. LeaveRequest, PurchaseOrder
+  triggerEvent   String?           // Domain event that triggers this
+  organizationId String
+  organization   Organization      @relation(fields: [organizationId], references: [id])
+  schoolId       String?
+  school         School?           @relation(fields: [schoolId], references: [id])
+  isActive       Boolean           @default(true)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  versions       WorkflowVersion[]
+  instances      WorkflowInstance[]
+}
+
+model WorkflowVersion {
+  id                 String             @id @default(uuid())
+  workflowId         String
+  workflow           WorkflowDefinition @relation(fields: [workflowId], references: [id])
+  versionNumber      Int
+  status             WorkflowStatus     @default(DRAFT)
+  definition         Json               // Full steps and logic JSON
+  publishedAt        DateTime?
+  publishedById      String?
+  createdAt          DateTime           @default(now())
+
+  instances          WorkflowInstance[]
+  steps              WorkflowStep[]
+}
+
+model WorkflowStep {
+  id                String          @id @default(uuid())
+  versionId         String
+  version           WorkflowVersion @relation(fields: [versionId], references: [id])
+  name              String
+  type              WorkflowStepType
+  order             Int
+  config            Json?           // Approvers, conditions, actions
+  timeoutMinutes    Int?
+  escalsationPolicy Json?
+  createdAt         DateTime        @default(now())
+
+  instances         WorkflowStepInstance[]
+}
+
+model WorkflowInstance {
+  id                 String                @id @default(uuid())
+  workflowId         String
+  workflow           WorkflowDefinition    @relation(fields: [workflowId], references: [id])
+  versionId          String
+  version            WorkflowVersion       @relation(fields: [versionId], references: [id])
+  entityId           String                // ID of the record being processed
+  entityType         String
+  state              WorkflowInstanceState @default(PENDING)
+  organizationId     String
+  organization       Organization          @relation(fields: [organizationId], references: [id])
+  schoolId           String?
+  school             School?               @relation(fields: [schoolId], references: [id])
+  initiatedById      String
+  initiatedBy        User                  @relation("WorkflowInitiator", fields: [initiatedById], references: [id])
+  startedAt          DateTime              @default(now())
+  completedAt        DateTime?
+  cancelledAt        DateTime?
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+
+  stepInstances      WorkflowStepInstance[]
+}
+
+model WorkflowStepInstance {
+  id               String                @id @default(uuid())
+  instanceId       String
+  instance         WorkflowInstance      @relation(fields: [instanceId], references: [id])
+  stepId           String
+  step             WorkflowStep          @relation(fields: [stepId], references: [id])
+  status           WorkflowInstanceState @default(PENDING)
+  startedAt        DateTime              @default(now())
+  completedAt      DateTime?
+  dueDate          DateTime?
+  assignedToRole   String?
+  assignedToUserId String?
+
+  approvals        WorkflowApproval[]
+  actions          WorkflowActionRecord[]
+}
+
+model WorkflowApproval {
+  id              String                @id @default(uuid())
+  stepInstanceId  String
+  stepInstance    WorkflowStepInstance  @relation(fields: [stepInstanceId], references: [id])
+  approverId      String
+  approver        User                  @relation("WorkflowApprover", fields: [approverId], references: [id])
+  decision        String                // APPROVE, REJECT, REWORK
+  comments        String?
+  createdAt       DateTime              @default(now())
+}
+
+model WorkflowActionRecord {
+  id              String               @id @default(uuid())
+  stepInstanceId  String
+  stepInstance    WorkflowStepInstance @relation(fields: [stepInstanceId], references: [id])
+  actionType      String
+  status          WorkflowActionStatus @default(PENDING)
+  result          Json?
+  error           String?
+  createdAt       DateTime             @default(now())
+}
+
+model WorkflowDelegation {
+  id             String   @id @default(uuid())
+  fromUserId     String
+  fromUser       User     @relation("Delegator", fields: [fromUserId], references: [id])
+  toUserId       String
+  toUser         User     @relation("Delegatee", fields: [toUserId], references: [id])
+  startDate      DateTime
+  endDate        DateTime
+  reason         String?
+  isActive       Boolean  @default(true)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  createdAt      DateTime @default(now())
+}
+
 // Phase 21: Enterprise Analytics & BI
 
 model AnalyticsDashboard {
@@ -3954,6 +4126,135 @@ model EmployeeReimbursement {
   paymentDate  DateTime?
   createdAt    DateTime            @default(now())
   updatedAt            DateTime            @updatedAt
+}
+
+// Phase 22: Unified Workflow, Approvals & Automation Engine
+
+model WorkflowDefinition {
+  id             String            @id @default(uuid())
+  name           String
+  description    String?
+  module         String            // e.g. HR, PROCUREMENT
+  entityType     String            // e.g. LeaveRequest, PurchaseOrder
+  triggerEvent   String?           // Domain event that triggers this
+  organizationId String
+  organization   Organization      @relation(fields: [organizationId], references: [id])
+  schoolId       String?
+  school         School?           @relation(fields: [schoolId], references: [id])
+  isActive       Boolean           @default(true)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  versions       WorkflowVersion[]
+  instances      WorkflowInstance[]
+}
+
+model WorkflowVersion {
+  id                 String             @id @default(uuid())
+  workflowId         String
+  workflow           WorkflowDefinition @relation(fields: [workflowId], references: [id])
+  versionNumber      Int
+  status             WorkflowStatus     @default(DRAFT)
+  definition         Json               // Full steps and logic JSON
+  publishedAt        DateTime?
+  publishedById      String?
+  createdAt          DateTime           @default(now())
+
+  instances          WorkflowInstance[]
+  steps              WorkflowStep[]
+}
+
+model WorkflowStep {
+  id                String          @id @default(uuid())
+  versionId         String
+  version           WorkflowVersion @relation(fields: [versionId], references: [id])
+  name              String
+  type              WorkflowStepType
+  order             Int
+  config            Json?           // Approvers, conditions, actions
+  timeoutMinutes    Int?
+  escalsationPolicy Json?
+  createdAt         DateTime        @default(now())
+
+  instances         WorkflowStepInstance[]
+}
+
+model WorkflowInstance {
+  id                 String                @id @default(uuid())
+  workflowId         String
+  workflow           WorkflowDefinition    @relation(fields: [workflowId], references: [id])
+  versionId          String
+  version            WorkflowVersion       @relation(fields: [versionId], references: [id])
+  entityId           String                // ID of the record being processed
+  entityType         String
+  state              WorkflowInstanceState @default(PENDING)
+  organizationId     String
+  organization       Organization          @relation(fields: [organizationId], references: [id])
+  schoolId           String?
+  school             School?               @relation(fields: [schoolId], references: [id])
+  initiatedById      String
+  initiatedBy        User                  @relation("WorkflowInitiator", fields: [initiatedById], references: [id])
+  startedAt          DateTime              @default(now())
+  completedAt        DateTime?
+  cancelledAt        DateTime?
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+
+  stepInstances      WorkflowStepInstance[]
+}
+
+model WorkflowStepInstance {
+  id               String                @id @default(uuid())
+  instanceId       String
+  instance         WorkflowInstance      @relation(fields: [instanceId], references: [id])
+  stepId           String
+  step             WorkflowStep          @relation(fields: [stepId], references: [id])
+  status           WorkflowInstanceState @default(PENDING)
+  startedAt        DateTime              @default(now())
+  completedAt      DateTime?
+  dueDate          DateTime?
+  assignedToRole   String?
+  assignedToUserId String?
+
+  approvals        WorkflowApproval[]
+  actions          WorkflowActionRecord[]
+}
+
+model WorkflowApproval {
+  id              String                @id @default(uuid())
+  stepInstanceId  String
+  stepInstance    WorkflowStepInstance  @relation(fields: [stepInstanceId], references: [id])
+  approverId      String
+  approver        User                  @relation("WorkflowApprover", fields: [approverId], references: [id])
+  decision        String                // APPROVE, REJECT, REWORK
+  comments        String?
+  createdAt       DateTime              @default(now())
+}
+
+model WorkflowActionRecord {
+  id              String               @id @default(uuid())
+  stepInstanceId  String
+  stepInstance    WorkflowStepInstance @relation(fields: [stepInstanceId], references: [id])
+  actionType      String
+  status          WorkflowActionStatus @default(PENDING)
+  result          Json?
+  error           String?
+  createdAt       DateTime             @default(now())
+}
+
+model WorkflowDelegation {
+  id             String   @id @default(uuid())
+  fromUserId     String
+  fromUser       User     @relation("Delegator", fields: [fromUserId], references: [id])
+  toUserId       String
+  toUser         User     @relation("Delegatee", fields: [toUserId], references: [id])
+  startDate      DateTime
+  endDate        DateTime
+  reason         String?
+  isActive       Boolean  @default(true)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  createdAt      DateTime @default(now())
 }
 
 
