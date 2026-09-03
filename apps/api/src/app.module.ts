@@ -39,6 +39,7 @@ import { WorkflowModule } from './modules/workflow/workflow.module';
 import { BillingModule } from './modules/billing/billing.module';
 import { InternalModule } from './modules/internal/internal.module';
 import { PlatformModule } from './modules/platform/platform.module';
+import { SyncModule } from './modules/sync/sync.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
@@ -86,6 +87,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     BillingModule,
     InternalModule,
     PlatformModule,
+    SyncModule,
   ],
 })
 export class AppModule {}

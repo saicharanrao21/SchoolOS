@@ -2498,6 +2498,7 @@ model User {
   ownedContracts          CompanyContract[] @relation("ContractOwner")
   initiatedSupportSessions PlatformSupportSession[] @relation("SupportSessionActor")
   targetedSupportSessions  PlatformSupportSession[] @relation("SupportSessionTarget")
+  syncMutations           SyncMutation[]
 }
 
 model Role {
@@ -4666,6 +4667,63 @@ model PlatformSupportSession {
   isActive       Boolean      @default(true)
   createdAt      DateTime     @default(now())
 }
+
+// Phase 29: Offline Sync & Realtime Infrastructure
+
+enum OutboxStatus {
+  PENDING
+  PROCESSED
+  FAILED
+}
+
+enum SyncMutationStatus {
+  PENDING
+  SYNCING
+  COMPLETED
+  FAILED
+  CONFLICT
+}
+
+model OutboxEvent {
+  id             String       @id @default(uuid())
+  organizationId String
+  schoolId       String?
+  eventType      String
+  aggregateType  String
+  aggregateId    String
+  payload        Json
+  status         OutboxStatus @default(PENDING)
+  attempts       Int          @default(0)
+  availableAt    DateTime     @default(now())
+  processedAt    DateTime?
+  lastError      String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId, schoolId, status])
+  @@index([status, availableAt])
+}
+
+model SyncMutation {
+  id               String             @id @default(uuid())
+  clientMutationId String             @unique
+  organizationId   String
+  schoolId         String?
+  userId           String
+  user             User               @relation(fields: [userId], references: [id])
+  entityType       String
+  entityId         String?
+  action           String             // CREATE, UPDATE, DELETE
+  payload          Json
+  status           SyncMutationStatus @default(PENDING)
+  response         Json?
+  error            String?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  @@index([organizationId, userId, status])
+}
+
 
 
 
