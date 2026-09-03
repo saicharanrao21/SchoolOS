@@ -38,6 +38,7 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { WorkflowModule } from './modules/workflow/workflow.module';
 import { BillingModule } from './modules/billing/billing.module';
 import { InternalModule } from './modules/internal/internal.module';
+import { PlatformModule } from './modules/platform/platform.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
@@ -84,6 +85,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     WorkflowModule,
     BillingModule,
     InternalModule,
+    PlatformModule,
   ],
 })
 export class AppModule {}

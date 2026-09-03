@@ -50,7 +50,8 @@ import {
   CreditCard,
   Zap,
   Scale,
-  Receipt
+  Receipt,
+  ToggleRight
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -267,6 +268,14 @@ const navItems = [
     children: [
       { label: 'Internal Finance', href: '/management/internal/finance', icon: Receipt },
       { label: 'Legal & Compliance', href: '/management/internal/legal', icon: Scale },
+    ]
+  },
+  {
+    label: 'Superadmin Control Plane',
+    icon: ShieldCheck,
+    children: [
+      { label: 'Control Plane', href: '/platform/dashboard', icon: LayoutDashboard },
+      { label: 'Feature Flags', href: '/platform/feature-flags', icon: ToggleRight },
     ]
   },
   {

@@ -716,6 +716,7 @@ model Organization {
   internalVendors     InternalVendor[]
   legalMatters        LegalMatter[]
   companyContracts    CompanyContract[]
+  platformSupportSessions PlatformSupportSession[]
   auditLogs   AuditEvent[]
 }
 
@@ -2495,6 +2496,8 @@ model User {
   approvedExpenses        InternalExpense[] @relation("ExpenseApprover")
   responsibleLegalMatters LegalMatter[] @relation("LegalResponsibleUser")
   ownedContracts          CompanyContract[] @relation("ContractOwner")
+  initiatedSupportSessions PlatformSupportSession[] @relation("SupportSessionActor")
+  targetedSupportSessions  PlatformSupportSession[] @relation("SupportSessionTarget")
 }
 
 model Role {
@@ -4597,6 +4600,73 @@ model CompanyContract {
   createdAt      DateTime              @default(now())
   updatedAt      DateTime              @updatedAt
 }
+
+// Phase 28: Superadmin & Platform Control Plane
+
+enum TenantLifecycleState {
+  PROVISIONING
+  ACTIVE
+  TRIAL
+  SUSPENDED
+  PAST_DUE
+  DEACTIVATED
+}
+
+model PlatformFeatureFlag {
+  id                   String   @id @default(uuid())
+  key                  String   @unique
+  name                 String
+  description          String?
+  isEnabled            Boolean  @default(true)
+  targetOrganizations String[] // Org IDs for targeted rollout
+  rolloutPercent       Int      @default(100)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model PlatformConfig {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       Json
+  description String?
+  category    String   @default("GENERAL")
+  updatedById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model PlatformAnnouncement {
+  id             String    @id @default(uuid())
+  title          String
+  message        String
+  targetAudience String    @default("ALL_TENANTS")
+  targetPlans    String[]
+  targetStatus   String[]
+  channels       String[]
+  scheduledAt    DateTime?
+  publishedAt    DateTime?
+  createdById    String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model PlatformSupportSession {
+  id             String       @id @default(uuid())
+  sessionToken   String       @unique
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  reason         String
+  actorUserId    String
+  actorUser      User         @relation("SupportSessionActor", fields: [actorUserId], references: [id])
+  targetUserId   String
+  targetUser     User         @relation("SupportSessionTarget", fields: [targetUserId], references: [id])
+  startedAt      DateTime     @default(now())
+  expiresAt      DateTime
+  endedAt        DateTime?
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+}
+
 
 
 
