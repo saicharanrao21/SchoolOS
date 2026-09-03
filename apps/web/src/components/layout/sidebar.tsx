@@ -43,7 +43,8 @@ import {
   ShoppingCart,
   AlertTriangle,
   GitBranch,
-  Inbox
+  Inbox,
+  Wrench
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -110,6 +111,7 @@ const navItems = [
       { label: 'Routes', href: '/management/transport/routes', icon: Route },
       { label: 'Vehicles', href: '/management/transport/vehicles', icon: Bus },
       { label: 'Active Trips', href: '/management/transport/trips', icon: Navigation },
+      { label: 'Maintenance', href: '/management/transport/maintenance', icon: Wrench },
     ]
   },
   {

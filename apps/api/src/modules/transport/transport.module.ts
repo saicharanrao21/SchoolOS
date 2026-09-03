@@ -13,6 +13,8 @@ import { TrackingController } from './tracking/tracking.controller';
 import { TransportPoliciesController } from './policies/policies.controller';
 import { TransportOperatorController } from './operator/transport-operator.controller';
 import { TransportOperatorService } from './operator/transport-operator.service';
+import { TransportMaintenanceController } from './maintenance/maintenance.controller';
+import { TransportMaintenanceService } from './maintenance/maintenance.service';
 
 @Module({
   controllers: [
@@ -23,6 +25,7 @@ import { TransportOperatorService } from './operator/transport-operator.service'
     TrackingController,
     TransportPoliciesController,
     TransportOperatorController,
+    TransportMaintenanceController,
   ],
   providers: [
     VehiclesService,
@@ -32,6 +35,7 @@ import { TransportOperatorService } from './operator/transport-operator.service'
     TrackingService,
     TransportPoliciesService,
     TransportOperatorService,
+    TransportMaintenanceService,
   ],
   exports: [
     VehiclesService,
@@ -41,6 +45,7 @@ import { TransportOperatorService } from './operator/transport-operator.service'
     TrackingService,
     TransportPoliciesService,
     TransportOperatorService,
+    TransportMaintenanceService,
   ],
 })
 export class TransportModule {}
