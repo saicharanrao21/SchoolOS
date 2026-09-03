@@ -11,6 +11,9 @@ import { SmsProvider } from './providers/sms.provider';
 import { WhatsAppProvider } from './providers/whatsapp.provider';
 import { PushProvider } from './providers/push.provider';
 
+import { CampaignsController } from './campaigns/campaigns.controller';
+import { CampaignsService } from './campaigns/campaigns.service';
+
 @Global()
 @Module({
   controllers: [
@@ -18,6 +21,7 @@ import { PushProvider } from './providers/push.provider';
     NotificationLogsController,
     InAppNotificationsController,
     NotificationDevicesController,
+    CampaignsController,
   ],
   providers: [
     NotificationTemplatesService,
@@ -27,11 +31,13 @@ import { PushProvider } from './providers/push.provider';
     SmsProvider,
     WhatsAppProvider,
     PushProvider,
+    CampaignsService,
   ],
   exports: [
     NotificationTemplatesService,
     NotificationLogsService,
     NotificationOrchestratorService,
+    CampaignsService,
   ],
 })
 export class NotificationsModule {}

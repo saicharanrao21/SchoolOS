@@ -44,7 +44,9 @@ import {
   AlertTriangle,
   GitBranch,
   Inbox,
-  Wrench
+  Wrench,
+  Radio,
+  Send
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -101,6 +103,15 @@ const navItems = [
       { label: 'Fee Structures', href: '/management/finance/fee-structures', icon: Layers },
       { label: 'Invoices', href: '/management/finance/invoices', icon: FileText },
       { label: 'Collect Fee', href: '/management/finance/collect', icon: Plus },
+    ]
+  },
+  {
+    label: 'Communications',
+    icon: Send,
+    children: [
+      { label: 'Dashboard', href: '/management/communications/dashboard', icon: LayoutDashboard },
+      { label: 'Broadcasts', href: '/management/communications/dashboard', icon: Radio },
+      { label: 'Templates', href: '/management/notifications/templates', icon: FileSpreadsheet },
     ]
   },
   {

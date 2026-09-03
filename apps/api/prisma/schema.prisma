@@ -707,6 +707,7 @@ model Organization {
   workflowInstances   WorkflowInstance[]
   workflowDelegations WorkflowDelegation[]
   transportMaintenances TransportMaintenance[]
+  communicationCampaigns CommunicationCampaign[]
   auditLogs   AuditEvent[]
 }
 
@@ -772,6 +773,7 @@ model School {
   vehicles           Vehicle[]
   routes             TransportRoute[]
   transportMaintenances TransportMaintenance[]
+  communicationCampaigns CommunicationCampaign[]
   libraries          Library[]
   hostels            Hostel[]
   events             SchoolEvent[]
@@ -2479,6 +2481,8 @@ model User {
   workflowApprovals  WorkflowApproval[] @relation("WorkflowApprover")
   workflowDelegationsFrom WorkflowDelegation[] @relation("Delegator")
   workflowDelegationsTo   WorkflowDelegation[] @relation("Delegatee")
+  createdCampaigns        CommunicationCampaign[] @relation("CampaignCreator")
+  campaignRecipients      CampaignRecipient[]
 }
 
 model Role {
@@ -2603,10 +2607,12 @@ model Notification {
   status             NotificationStatus   @default(QUEUED)
   subject            String?
   body               String
+  category           String?             // e.g. Academic, Attendance, Fees, Transport, Security, System
   metadata           Json?
   scheduledAt        DateTime?
   sentAt             DateTime?
   deliveredAt        DateTime?
+  readAt             DateTime?
   failedAt           DateTime?
   retryCount         Int                 @default(0)
   errorCode          String?
@@ -4154,8 +4160,67 @@ model EmployeeReimbursement {
   approvedById String?
   paymentDate  DateTime?
   createdAt    DateTime            @default(now())
-  updatedAt            DateTime            @updatedAt
+  updatedAt    DateTime            @updatedAt
 }
+
+// Phase 24: Enterprise Communications, Notifications & Messaging
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+model CommunicationCampaign {
+  id             String               @id @default(uuid())
+  title          String
+  description    String?
+  targetAudience String               // ALL_SCHOOL, CLASS, ROLE, CUSTOM
+  targetRoles    String[]
+  targetClasses  String[]
+  channels       NotificationChannel[]
+  subject        String?
+  body           String
+  metadata       Json?
+  status         CampaignStatus       @default(DRAFT)
+  scheduledAt    DateTime?
+  startedAt      DateTime?
+  completedAt    DateTime?
+  totalRecipients Int                 @default(0)
+  sentCount      Int                  @default(0)
+  deliveredCount Int                  @default(0)
+  failedCount    Int                  @default(0)
+  organizationId String
+  organization   Organization         @relation(fields: [organizationId], references: [id])
+  schoolId       String
+  school         School               @relation(fields: [schoolId], references: [id])
+  createdById    String
+  createdBy      User                 @relation("CampaignCreator", fields: [createdById], references: [id])
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  recipients     CampaignRecipient[]
+}
+
+model CampaignRecipient {
+  id             String                @id @default(uuid())
+  campaignId     String
+  campaign       CommunicationCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  recipientId    String
+  recipient      User                  @relation(fields: [recipientId], references: [id])
+  status         NotificationStatus    @default(QUEUED)
+  sentAt         DateTime?
+  deliveredAt    DateTime?
+  readAt         DateTime?
+  error          String?
+  createdAt      DateTime              @default(now())
+
+  @@unique([campaignId, recipientId])
+}
+
 
 
 
