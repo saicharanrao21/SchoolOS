@@ -712,6 +712,10 @@ model Organization {
   saasInvoices        SaaSInvoice[]
   saasPayments        SaaSPayment[]
   saasCouponRedemptions SaaSCouponRedemption[]
+  internalExpenses    InternalExpense[]
+  internalVendors     InternalVendor[]
+  legalMatters        LegalMatter[]
+  companyContracts    CompanyContract[]
   auditLogs   AuditEvent[]
 }
 
@@ -2487,6 +2491,10 @@ model User {
   workflowDelegationsTo   WorkflowDelegation[] @relation("Delegatee")
   createdCampaigns        CommunicationCampaign[] @relation("CampaignCreator")
   campaignRecipients      CampaignRecipient[]
+  submittedExpenses       InternalExpense[] @relation("ExpenseSubmitter")
+  approvedExpenses        InternalExpense[] @relation("ExpenseApprover")
+  responsibleLegalMatters LegalMatter[] @relation("LegalResponsibleUser")
+  ownedContracts          CompanyContract[] @relation("ContractOwner")
 }
 
 model Role {
@@ -4436,6 +4444,158 @@ model SaaSWebhookEvent {
   createdAt   DateTime            @default(now())
 
   @@unique([provider, eventId])
+}
+
+// Phase 27: Internal Company Operations, Finance, Audit, Legal, Vendors & Internal HR
+
+enum ExpenseClaimStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  PAYMENT_PENDING
+  PAID
+  CANCELLED
+}
+
+enum InternalVendorStatus {
+  ACTIVE
+  INACTIVE
+  PENDING_VERIFICATION
+  SUSPENDED
+}
+
+enum LegalMatterStatus {
+  OPEN
+  UNDER_REVIEW
+  IN_COURT
+  SETTLED
+  DISMISSED
+  CLOSED
+}
+
+enum LegalMatterPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum CompanyContractStatus {
+  DRAFT
+  UNDER_REVIEW
+  ACTIVE
+  EXPIRED
+  TERMINATED
+  RENEWED
+}
+
+model InternalExpenseCategory {
+  id          String            @id @default(uuid())
+  name        String
+  code        String            @unique
+  description String?
+  budgetLimit Decimal?          @db.Decimal(12, 2)
+  isActive    Boolean           @default(true)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  expenses    InternalExpense[]
+}
+
+model InternalExpense {
+  id             String             @id @default(uuid())
+  claimNumber    String             @unique
+  title          String
+  description    String?
+  categoryId     String
+  category       InternalExpenseCategory @relation(fields: [categoryId], references: [id])
+  amount         Decimal            @db.Decimal(12, 2)
+  currency       String             @default("USD")
+  taxAmount      Decimal            @default(0) @db.Decimal(12, 2)
+  status         ExpenseClaimStatus @default(DRAFT)
+  paymentMethod  String?
+  expenseDate    DateTime
+  paidAt         DateTime?
+  receiptUrl     String?
+  notes          String?
+  department     String?
+  organizationId String
+  organization   Organization       @relation(fields: [organizationId], references: [id])
+  submittedById  String
+  submittedBy    User               @relation("ExpenseSubmitter", fields: [submittedById], references: [id])
+  approvedById   String?
+  approvedBy     User?              @relation("ExpenseApprover", fields: [approvedById], references: [id])
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+}
+
+model InternalVendor {
+  id                String               @id @default(uuid())
+  code              String               @unique
+  companyName       String
+  contactPerson     String?
+  email             String?
+  phone             String?
+  address           String?
+  taxId             String?
+  category          String?
+  status            InternalVendorStatus @default(ACTIVE)
+  bankDetails       Json?
+  notes             String?
+  contractStartDate DateTime?
+  contractEndDate   DateTime?
+  outstandingAmount Decimal              @default(0) @db.Decimal(12, 2)
+  organizationId    String
+  organization      Organization         @relation(fields: [organizationId], references: [id])
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+
+  contracts         CompanyContract[]
+}
+
+model LegalMatter {
+  id                   String              @id @default(uuid())
+  caseNumber           String              @unique
+  title                String
+  matterType           String              // LITIGATION, COMPLIANCE, IP, REGULATORY
+  status               LegalMatterStatus   @default(OPEN)
+  priority             LegalMatterPriority @default(MEDIUM)
+  description          String?
+  externalCounsel      String?
+  counselContact       String?
+  nextActionDate       DateTime?
+  nextActionDescription String?
+  responsibleUserId    String?
+  responsibleUser      User?               @relation("LegalResponsibleUser", fields: [responsibleUserId], references: [id])
+  organizationId       String
+  organization         Organization        @relation(fields: [organizationId], references: [id])
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+}
+
+model CompanyContract {
+  id             String                @id @default(uuid())
+  contractNumber String                @unique
+  title          String
+  type           String                // VENDOR_AGREEMENT, SERVICE_LEVEL, CUSTOMER_SAAS, EMPLOYMENT
+  vendorId       String?
+  vendor         InternalVendor?       @relation(fields: [vendorId], references: [id])
+  value          Decimal               @db.Decimal(12, 2)
+  currency       String                @default("USD")
+  effectiveDate  DateTime
+  expiryDate     DateTime
+  renewalDate    DateTime?
+  autoRenewal    Boolean               @default(false)
+  status         CompanyContractStatus @default(ACTIVE)
+  fileUrl        String?
+  ownerId        String?
+  owner          User?                 @relation("ContractOwner", fields: [ownerId], references: [id])
+  organizationId String
+  organization   Organization          @relation(fields: [organizationId], references: [id])
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
 }
 
 

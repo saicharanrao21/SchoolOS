@@ -48,7 +48,9 @@ import {
   Radio,
   Send,
   CreditCard,
-  Zap
+  Zap,
+  Scale,
+  Receipt
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -257,6 +259,14 @@ const navItems = [
     children: [
       { label: 'Subscription', href: '/management/billing/dashboard', icon: LayoutDashboard },
       { label: 'Plans & Pricing', href: '/management/billing/plans', icon: Zap },
+    ]
+  },
+  {
+    label: 'Internal Operations',
+    icon: Briefcase,
+    children: [
+      { label: 'Internal Finance', href: '/management/internal/finance', icon: Receipt },
+      { label: 'Legal & Compliance', href: '/management/internal/legal', icon: Scale },
     ]
   },
   {
