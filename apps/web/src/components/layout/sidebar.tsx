@@ -74,6 +74,7 @@ const navItems = [
       { label: 'Exam List', href: '/management/exams/examinations', icon: Calendar },
       { label: 'Marks Entry', href: '/management/exams/mark-entry', icon: FileSpreadsheet },
       { label: 'Result Sheets', href: '/management/exams/results', icon: ShieldCheck },
+      { label: 'Report Cards', href: '/management/exams/report-cards', icon: FileText },
     ]
   },
   {

@@ -10,13 +10,19 @@ import { ExamSchedulesController } from './schedules/exam-schedules.controller';
 import { MarksEntryController } from './marks/marks-entry.controller';
 import { ResultsController } from './results/results.controller';
 
+import { ReportCardsController } from './report-cards/report-cards.controller';
+import { ReportCardsService } from './report-cards/report-cards.service';
+import { DmsModule } from '../dms/dms.module';
+
 @Module({
+  imports: [DmsModule],
   controllers: [
     ExaminationsController,
     ExamsConfigController,
     ExamSchedulesController,
     MarksEntryController,
     ResultsController,
+    ReportCardsController,
   ],
   providers: [
     ExamsConfigService,
@@ -24,6 +30,7 @@ import { ResultsController } from './results/results.controller';
     ExamSchedulesService,
     MarksEntryService,
     ResultsService,
+    ReportCardsService,
   ],
   exports: [
     ExamsConfigService,
@@ -31,6 +38,7 @@ import { ResultsController } from './results/results.controller';
     ExamSchedulesService,
     MarksEntryService,
     ResultsService,
+    ReportCardsService,
   ],
 })
 export class ExamsModule {}
