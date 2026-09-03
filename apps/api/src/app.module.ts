@@ -36,6 +36,7 @@ import { DataExchangeModule } from './modules/data-exchange/data-exchange.module
 import { SearchModule } from './modules/search/search.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { WorkflowModule } from './modules/workflow/workflow.module';
+import { BillingModule } from './modules/billing/billing.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
@@ -80,6 +81,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     SearchModule,
     AnalyticsModule,
     WorkflowModule,
+    BillingModule,
   ],
 })
 export class AppModule {}

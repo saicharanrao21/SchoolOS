@@ -46,7 +46,9 @@ import {
   Inbox,
   Wrench,
   Radio,
-  Send
+  Send,
+  CreditCard,
+  Zap
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -247,6 +249,14 @@ const navItems = [
       { label: 'Document Center', href: '/management/dms', icon: FileText },
       { label: 'Certificates', href: '/management/certificates', icon: ShieldCheck },
       { label: 'Data Exchange', href: '/management/exchange', icon: RefreshCcw },
+    ]
+  },
+  {
+    label: 'Platform Billing',
+    icon: CreditCard,
+    children: [
+      { label: 'Subscription', href: '/management/billing/dashboard', icon: LayoutDashboard },
+      { label: 'Plans & Pricing', href: '/management/billing/plans', icon: Zap },
     ]
   },
   {
