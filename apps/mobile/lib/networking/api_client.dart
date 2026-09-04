@@ -1,11 +1,12 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../config/environment_config.dart';
 
 class ApiClient {
   final String baseUrl;
   String? _token;
 
-  ApiClient({required this.baseUrl});
+  ApiClient({String? baseUrl}) : baseUrl = baseUrl ?? EnvironmentConfig.apiUrl;
 
   void updateToken(String token) {
     _token = token;
